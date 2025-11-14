@@ -111,4 +111,12 @@ resource "proxmox_vm_qemu" "winsrv" {
   cipassword = "Formation13@"
 }
 
+# Création des Opnsenses VM 
 
+resource "proxmox_vm_qemu" "Opnsenses" {
+
+  for_each = var.opnsenses_vm
+
+  name        = each.value.name
+  vmid        = each.value.vmid
+  target_node      = var.target_node

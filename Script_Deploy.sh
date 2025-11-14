@@ -17,6 +17,11 @@ LXC_TEMPLATE_FILENAME="debian-12-standard_12.7-1_amd64.tar.zst"
 LXC_TEMPLATE="/var/lib/vz/template/cache/$LXC_TEMPLATE_FILENAME"
 LXC_TEMPLATE_URL="http://download.proxmox.com/images/system/$LXC_TEMPLATE_FILENAME"
 CHEMIN_TEMPLATE="local:vztmpl/$LXC_TEMPLATE_FILENAME"
+EMPLACEMENT_ISO="/var/lib/vz/template/iso"
+VERSION_OPNSENSE="25.7/OPNsense-25.7-dvd-amd64"
+ISO_BASENAME="OPNsense-25.7-dvd-amd64.iso"
+CHEMIN_ISO_OPNSENSE="/var/lib/vz/template/iso/${ISO_BASENAME}"
+URL_ISO_OPNSENSE="https://pkg.opnsense.org/releases/25.7/${ISO_BASENAME}.bz2"
 CONTAINER_SSH_PORT=22
 node=$(hostname)
 PM_API="https://172.16.0.253:8006/api2/json"
@@ -24,9 +29,6 @@ TOKEN_USER="terraform-prov@pam"
 TOKEN_NAME="auto-token"
 USER_ROLE="Administrator"
 GITHUB_REPO="https://github.com/LeQ-letigre/Infra_GSBV2.git"
-
-
-# Création des bridges Linuxs 
 
 
 
@@ -77,11 +79,25 @@ for VM in "${VM_LIST[@]}"; do
   fi
 done
 
-# === 1. Préparer le système ===
+# === 1. Télécharger les ISO ===
+# Lxc Debian 12
 echo "[+] Vérification de l'image Debian 12 LXC..."
 if [ ! -f "$LXC_TEMPLATE" ]; then
   echo "[+] Téléchargement de l'image LXC $LXC_TEMPLATE_FILENAME..."
   wget -O "$LXC_TEMPLATE" "$LXC_TEMPLATE_URL"
+fi
+
+# Télécharger OPNsense
+mkdir -p "$(dirname "$CHEMIN_ISO_OPNSENSE")"
+
+if [ ! -f "$CHEMIN_ISO_OPNSENSE" ]; then
+  TMP_BZ="/tmp/${ISO_BASENAME}.bz2"
+  echo "[+] Téléchargement OPNsense -> $TMP_BZ"
+  wget -qO "$TMP_BZ" "$URL_ISO_OPNSENSE" || { echo "[-] wget failed"; rm -f "$TMP_BZ"; exit 1; }
+  echo "[+] Décompression -> $CHEMIN_ISO_OPNSENSE"
+  bunzip2 -c "$TMP_BZ" > "$CHEMIN_ISO_OPNSENSE" || { echo "[-] bunzip2 failed"; rm -f "$TMP_BZ"; exit 1; }
+  rm -f "$TMP_BZ"
+  echo "[+] ISO prête : $CHEMIN_ISO_OPNSENSE"
 fi
 
 # === 2. Génération de la paire de clés SSH ===
@@ -231,7 +247,7 @@ pip install ansible "pywinrm[credssp]" requests-ntlm
 echo "🔗 Ajout d’un alias global dans ~/.bashrc pour ansible et ansible-playbook"
 if ! grep -q "venvs/ansible" ~/.bashrc; then
   echo 'ansible() { source ~/venvs/ansible/bin/activate && command ansible "\$@"; }' >> ~/.bashrc
-  echo 'ansible-playbook() { source ~/venvs/ansible/bin/activate && command ansible-playbook "\$@"; }' >> ~/.bashrc
+  echo 'ansile-playbook() { source ~/venvs/ansible/bin/activate && command ansible-playbook "\$@"; }' >> ~/.bashrc
 fi
 
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
