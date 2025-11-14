@@ -1,0 +1,3 @@
+port_acces: 8080
+user: adguard 
+password_hash: $2a$10$AB5JroXGEbuclveFToeeMOlDstKr0v1W.P7JXFa3NeQ5dGp30aS7S

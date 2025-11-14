@@ -1,0 +1,35 @@
+- name: Update 
+  hosts: linuxs
+  become: yes
+  roles: 
+    - roles/MAJ  
+
+- name : Install AdGuard
+  become: yes
+  hosts: Adguard
+  roles:
+    - roles/Adguard
+
+- name : Install Uptime Kuma
+  become: yes
+  hosts: Uptime_Kuma
+  roles:
+    - roles/Install_Docker
+    - roles/Uptime_Kuma
+
+- name : Install GLPI
+  become: yes
+  hosts: GLPI
+  roles:
+    - roles/Install_Docker
+    - roles/GLPI
+
+- name : Promouvoir l'AD
+  hosts: WinSRV01
+  roles:
+    - roles/PromouvoirAD01
+
+- name: ReplicationAD02
+  hosts: WinSRV02
+  roles:
+    - roles/ReplicationAD02

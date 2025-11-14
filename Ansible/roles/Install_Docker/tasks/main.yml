@@ -1,0 +1,38 @@
+- name: Installer les dépendances pour Docker
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Ajouter la clé GPG officielle de Docker
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+    validate_certs: false
+
+- name: Ajouter le repository Docker
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+    state: present
+    validate_certs: false
+
+
+- name: Installer Docker Engine et le plugin Compose
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
+
+- name: S'assurer que le service Docker est démarré
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes

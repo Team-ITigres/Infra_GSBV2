@@ -1,0 +1,13 @@
+[Unit]
+Description=AdGuard Home: Network-level blocker
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/AdGuardHome
+ExecStart=/opt/AdGuardHome/AdGuardHome -c /opt/AdGuardHome/AdGuardHome.yaml -w /opt/AdGuardHome
+Restart=on-failure
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

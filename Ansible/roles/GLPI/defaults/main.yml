@@ -1,0 +1,5 @@
+mariadb_version: 10.6
+glpi_mysql_root_password: root
+glpi_mysql_db: glpi
+glpi_mysql_user: glpi
+glpi_mysql_password: glpi

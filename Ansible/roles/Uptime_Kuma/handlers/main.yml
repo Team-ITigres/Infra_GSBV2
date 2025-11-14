@@ -1,0 +1,4 @@
+- name: Redémarrer Uptime_Kuma
+  community.docker.docker_compose_v2:
+    project_src: /opt/Uptime_Kuma
+    state: restarted

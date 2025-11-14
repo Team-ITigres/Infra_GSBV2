@@ -1,0 +1,13 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/MAJ
+
+- name: Mettre à jour les paquets
+  apt: 
+    update_cache: yes
+    cache_valid_time: 7200
+    name: 
+      - curl 
+      - wget
+    state: present
+   

@@ -1,0 +1,20 @@
+- name: Installer le rôle ADDS
+  win_feature:
+    name: AD-Domain-Services
+    state: present
+    include_management_tools: yes
+
+- name: Définir le fuseau horaire
+  win_timezone:
+    timezone: "Romance Standard Time"
+
+- name: Promouvoir le serveur en DC secondaire
+  microsoft.ad.domain_controller:
+    dns_domain_name: "{{ dns_domain }}"
+    domain_admin_user: "{{ domain_admin_user }}"
+    domain_admin_password: "{{ domain_admin_password }}"
+    safe_mode_password: "{{ admin_pass }}"
+    site_name: "Default-First-Site-Name"
+    install_dns: true
+    state: domain_controller
+    reboot: true

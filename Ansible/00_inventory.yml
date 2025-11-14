@@ -1,0 +1,40 @@
+all: 
+  children: 
+    linuxs:
+      hosts: 
+        Adguard:
+         ansible_host: 172.16.0.3
+         ansible_user: root
+         ansible_ssh_private_key_file: /root/.ssh/Adguard-ed25519
+        Uptime_Kuma:
+         ansible_host: 172.16.0.4
+         ansible_user: root
+         ansible_ssh_private_key_file: /root/.ssh/UptimeKuma-ed25519
+        GLPI: 
+         ansible_host: 172.16.0.5
+         ansible_user: root
+         ansible_ssh_private_key_file: /root/.ssh/GLPI-ed25519
+   
+    winservers:
+      hosts:
+        WinSRV01:
+          ansible_host: 172.16.0.1
+          ansible_user: Administrateur
+          ansible_password: "Formation13@"
+          ansible_connection: winrm
+          ansible_port: 5985
+          ansible_winrm_transport: basic
+          ansible_winrm_server_cert_validation: ignore
+        WinSRV02:
+          ansible_host: 172.16.0.2
+          ansible_user: Administrateur
+          ansible_password: "Formation13@"
+          ansible_connection: winrm
+          ansible_port: 5985
+          ansible_winrm_transport: basic
+          ansible_winrm_server_cert_validation: ignore
+
+   # group2:
+    #  hosts:
+     #   vm4:
+      #   ansible_host: 10.10.0.10        

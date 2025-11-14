@@ -1,0 +1,19 @@
+- name: Installer le rôle ADDS
+  win_feature:
+    name: AD-Domain-Services
+    state: present
+    include_management_tools: yes
+
+- name: Définir le fuseau horaire
+  win_timezone:
+    timezone: "Romance Standard Time"
+
+- name: Promouvoir le serveur en contrôleur de domaine principal
+  microsoft.ad.domain:
+    dns_domain_name: "{{ dns_domain }}"
+    domain_netbios_name: "GSB"
+    safe_mode_password: "{{ admin_pass }}"
+    install_dns: true
+    forest_mode: "WinThreshold"
+    domain_mode: "WinThreshold"
+    reboot: true

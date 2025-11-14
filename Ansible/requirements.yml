@@ -1,0 +1,5 @@
+collections:
+  - name: community.docker
+  - name: ansible.windows
+  - name: community.windows
+  - name: microsoft.ad

@@ -1,0 +1,14 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"   # Port web d'accès
+    volumes:
+      - kuma_db:/app/data
+      - kuma_data:/app/data/uploads
+
+volumes:
+  kuma_db:
+  kuma_data:

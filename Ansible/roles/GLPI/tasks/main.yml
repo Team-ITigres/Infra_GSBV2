@@ -1,0 +1,62 @@
+- name: Créer les dossiers pour les volumes Docker
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  loop:
+    - /opt/glpi/db_data
+    - /opt/glpi/html
+
+- name: Créer le réseau Docker pour GLPI
+  community.docker.docker_network:
+    name: glpi_net
+    driver: bridge
+
+- name: Lancer MariaDB pour GLPI 
+  community.docker.docker_container:
+    name: glpi_db 
+    image: mariadb:{{ mariadb_version }}
+    state: started
+    restart_policy: always
+    env:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "glpi"
+      MYSQL_USER: "glpi"
+      MYSQL_PASSWORD: "glpi"
+    volumes:
+      - /opt/glpi/db_data:/var/lib/mysql
+    networks:
+      - name: glpi_net
+
+- name: Lancer GLPI (web)
+  community.docker.docker_container:
+    name: glpi_web
+    image: diouxx/glpi
+    state: started
+    restart_policy: always
+    ports:
+      - "80:80"
+    volumes:
+      - /opt/glpi/html:/var/www/html
+    env:
+      TIMEZONE: Europe/Paris
+    networks:
+      - name: glpi_net
+
+- name: Supprimer le fichier install.php de GLPI
+  file:
+    path: /opt/glpi/html/install/install.php
+    state: absent
+
+- name: Copier le dump SQL dans la VM GLPI
+  copy:
+    src: files/glpi.sql
+    dest: /opt/glpi/glpi.sql
+
+- name: Injecter la base GLPI via docker exec
+  ansible.builtin.shell: |
+    docker exec -i glpi_db mysql -u glpi -pglpi glpi < /opt/glpi/glpi.sql
+
+
