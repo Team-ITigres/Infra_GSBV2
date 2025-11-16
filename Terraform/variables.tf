@@ -43,3 +43,11 @@ variable "win_srv" {
   }))
   
 }
+
+variable "opnsenses" {
+  type = map(object({
+    name               = string
+    vmid               = number
+    opnsense_template  = string
+  }))
+}

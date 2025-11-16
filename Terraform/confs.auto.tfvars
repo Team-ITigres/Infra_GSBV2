@@ -51,3 +51,17 @@ win_srv = {
 
     }
 }
+
+opnsenses = {
+  "OPNsense-Master" = {
+    name = "OPNsense-Master"
+    vmid = 301
+    opnsense_template = "OPNsenseMaster"
+    }
+
+  "OPNsense-Backup" = {
+    name = "OPNsense-Backup"
+    vmid = 302
+    opnsense_template = "OPNsenseBackup"  
+  }
+}

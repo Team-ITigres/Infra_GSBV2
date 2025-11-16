@@ -111,12 +111,45 @@ resource "proxmox_vm_qemu" "winsrv" {
   cipassword = "Formation13@"
 }
 
-# Création des Opnsenses VM 
+# Clonage des VM OPNsense à partir du template OPNsenseTemplate
 
-resource "proxmox_vm_qemu" "Opnsenses" {
+resource "proxmox_vm_qemu" "opnsenses" {
 
-  for_each = var.opnsenses_vm
+  for_each = var.opnsenses
 
   name        = each.value.name
   vmid        = each.value.vmid
-  target_node      = var.target_node
+
+  clone       = each.value.opnsense_template
+  full_clone  = true
+  onboot      = true
+  agent       = 1
+  agent_timeout = 300
+  bios        = "Seabios"
+  scsihw      = "virtio-scsi-single"
+  boot        = "order=scsi0;ide1"
+  target_node = var.target_node
+
+
+  memory      = 2048
+
+  cpu {
+    cores   = 2
+    sockets = 1
+  }
+
+  # Disque principal SCSI (slot = scsi0)
+  disk {
+    slot    = "scsi0"
+    type    = "disk"
+    storage = "local-lvm"
+    size    = "10G"
+    cache   = "writeback"
+  }
+
+  serial {
+      id   = 0
+      type = "socket"
+    }
+
+}
