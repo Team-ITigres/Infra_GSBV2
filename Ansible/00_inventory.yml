@@ -19,12 +19,8 @@ all:
       hosts:
         Sw01:
           ansible_host: 10.10.0.3
-          ansible_user: admin
-          ansible_password: "Formation13@"
         Sw02:
           ansible_host: 10.10.0.4
-          ansible_user: admin
-          ansible_password: "Formation13@"
 
     winservers:
       hosts:

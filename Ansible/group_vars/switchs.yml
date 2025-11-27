@@ -1,2 +1,4 @@
 ansible_connection: network_cli
 ansible_network_os: generic
+ansible_user: admin
+ansible_password: Formation13@
