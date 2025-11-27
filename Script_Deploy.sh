@@ -137,6 +137,7 @@ pct create $CTID "$LXC_TEMPLATE" \
   -cores 4 \
   -memory 4096 \
   -net0 name=eth0,bridge=$BRIDGE,ip=$IP_SETUP,gw=$GW \
+  -net1 name=eth1,bridge=vmbr2,ip=10.10.0.10/28,gw=10.10.0.1 \
   -storage local-lvm \
   -rootfs local-lvm:8 \
   -features nesting=1 \
