@@ -1,0 +1,51 @@
+---
+- name: Configurer une VIF sur EdgeRouter
+  hosts: routeur
+  gather_facts: no
+  
+  tasks:
+    - name: Vérifier que les variables sont définies
+      ansible.builtin.assert:
+        that:
+          - id_vif is defined
+          - ip_vif is defined
+          - dhcp_start is defined
+          - dhcp_stop is defined
+          - dhcp_gateway is defined
+          - dhcp_dns is defined
+        fail_msg: "Erreur : Les variables id_vif, ip_vif, dhcp_start, dhcp_stop, dhcp_gateway et dhcp_dns doivent être définies"
+    
+    - name: Configurer la VIF sur eth1
+      vyos.vyos.vyos_command:
+        commands:
+          - configure
+          - set interfaces ethernet eth1 vif {{ id_vif }} address {{ ip_vif }}
+          - set interfaces ethernet eth1 vif {{ id_vif }} description "Vif du vlan {{ id_vif }}"
+          - commit
+          - save
+          - exit
+      register: config_output
+    
+    - name: Afficher le résultat de la configuration VIF
+      ansible.builtin.debug:
+        msg: "VIF {{ id_vif }} créée sur eth1 avec l'IP {{ ip_vif }}"
+
+    - name: Extraire le réseau à partir de l'IP de la VIF
+      ansible.builtin.set_fact:
+        subnet_dhcp: "{{ ip_vif | regex_replace('\\.[0-9]+/', '.0/') }}"
+
+    - name: Configurer le serveur DHCP sur la VIF
+      vyos.vyos.vyos_command:
+        commands:
+          - configure
+          - set service dhcp-server shared-network-name VLAN{{ id_vif }} subnet {{ subnet_dhcp }} start {{ dhcp_start }} stop {{ dhcp_stop }}
+          - set service dhcp-server shared-network-name VLAN{{ id_vif }} subnet {{ subnet_dhcp }} default-router {{ dhcp_gateway }}
+          - set service dhcp-server shared-network-name VLAN{{ id_vif }} subnet {{ subnet_dhcp }} dns-server {{ dhcp_dns }}
+          - commit
+          - save
+          - exit
+      register: dhcp_output
+
+    - name: Afficher le résultat de la configuration DHCP
+      ansible.builtin.debug:
+        msg: "DHCP configuré sur {{ subnet_dhcp }} - Plage: {{ dhcp_start }} - {{ dhcp_stop }}, Gateway: {{ dhcp_gateway }}, DNS: {{ dhcp_dns }}"
