@@ -9,7 +9,7 @@
       when: vlan_id is not defined
       
     - name: Créer le vlan sur le ou les switchs
-      ansible.netcommon.cli_command:
+      ansible.netcommon.raw:
         command: |
           configure 
           vlan {{ vlan_id }}
@@ -19,7 +19,7 @@
           exit
 
     - name: Assigner les ports en mode access par switch 
-      ansible.netcommon.cli_command:
+      ansible.netcommon.raw:
         command: |
           configure
           interface {{ item }}
@@ -35,7 +35,7 @@
         - inventory_hostname in access_ports
 
     - name: Assigner les ports en mode trunk par switch 
-      ansible.netcommon.cli_command:
+      ansible.netcommon.raw:
         command: |
           configure
           interface {{ item }}

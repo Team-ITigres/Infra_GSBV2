@@ -1,4 +1,5 @@
-ansible_connection: network_cli
+ansible_connection: ssh
 ansible_network_os: generic
 ansible_user: admin
 ansible_password: Formation13@
+ansible_python_interpreter: /usr/bin/python3
