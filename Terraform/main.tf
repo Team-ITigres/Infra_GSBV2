@@ -125,7 +125,7 @@ resource "proxmox_vm_qemu" "opnsenses" {
   onboot      = true
   agent       = 1
   agent_timeout = 300
-  bios        = "Seabios"
+  bios        = "seabios"
   scsihw      = "virtio-scsi-single"
   boot        = "order=scsi0;ide1"
   target_node = var.target_node

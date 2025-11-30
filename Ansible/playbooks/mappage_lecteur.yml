@@ -1,0 +1,154 @@
+---
+- name: Créer une GPO pour mapper un lecteur réseau
+  hosts: WinSRV01
+  gather_facts: no
+
+  tasks:
+    - name: Vérifier que les variables sont définies
+      ansible.builtin.assert:
+        that:
+          - folder_name is defined
+          - ad_group is defined
+          - drive_letter is defined
+        fail_msg: "Erreur : Les variables folder_name, ad_group et drive_letter doivent être définies"
+
+    - name: Vérifier que la lettre de lecteur est valide
+      ansible.builtin.assert:
+        that:
+          - drive_letter | length == 1
+          - drive_letter | regex_search('^[D-Z]$') is not none
+        fail_msg: "Erreur : drive_letter doit être une seule lettre entre D et Z"
+
+    - name: Construire les variables
+      ansible.builtin.set_fact:
+        gpo_name: "Map_{{ folder_name }}_{{ ad_group }}"
+        unc_path: "\\\\{{ server_ip | default('172.16.0.1') }}\\{{ folder_name }}"
+        ou_path: "{{ ou_name is defined | ternary('OU=' + ou_name + ',DC=gsb,DC=local', 'DC=gsb,DC=local') }}"
+
+    - name: Afficher les informations de la GPO
+      ansible.builtin.debug:
+        msg: |
+          Création de la GPO :
+          - Nom : {{ gpo_name }}
+          - Lecteur : {{ drive_letter }}:
+          - Chemin : {{ unc_path }}
+          - Groupe cible : {{ ad_group }}
+
+    - name: Créer la GPO pour le mappage de lecteur
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+
+        # Vérifier si la GPO existe déjà
+        $gpoExists = Get-GPO -Name "{{ gpo_name }}" -ErrorAction SilentlyContinue
+
+        if (-not $gpoExists) {
+            # Créer la nouvelle GPO
+            $gpo = New-GPO -Name "{{ gpo_name }}" -Comment "Mappage automatique du lecteur {{ drive_letter }}: pour le groupe {{ ad_group }}"
+            Write-Output "GPO_CREATED:{{ gpo_name }}"
+        } else {
+            $gpo = $gpoExists
+            Write-Output "GPO_EXISTS:{{ gpo_name }}"
+        }
+
+        # Récupérer le GUID de la GPO
+        $gpoGuid = $gpo.Id.Guid
+        Write-Output "GPO_GUID:$gpoGuid"
+      register: gpo_creation
+
+    - name: Afficher le résultat de création de la GPO
+      ansible.builtin.debug:
+        msg: "{{ gpo_creation.stdout_lines }}"
+
+    - name: Extraire le GUID de la GPO
+      ansible.builtin.set_fact:
+        gpo_guid: "{{ gpo_creation.stdout | regex_search('GPO_GUID:([a-f0-9-]+)', '\\1') | first }}"
+
+    - name: Créer le dossier Preferences\Drives dans SYSVOL
+      ansible.windows.win_shell: |
+        $gpoPath = "\\{{ ansible_host }}\SYSVOL\gsb.local\Policies\{{ '{' }}{{ gpo_guid }}{{ '}' }}\User\Preferences\Drives"
+        if (-not (Test-Path $gpoPath)) {
+            New-Item -Path $gpoPath -ItemType Directory -Force | Out-Null
+            Write-Output "FOLDER_CREATED"
+        } else {
+            Write-Output "FOLDER_EXISTS"
+        }
+      register: folder_creation
+
+    - name: Créer le fichier XML de configuration du mappage
+      ansible.windows.win_copy:
+        content: |
+          <?xml version="1.0" encoding="utf-8"?>
+          <Drives clsid="{8FDDCC1A-0C3C-43cd-A6B4-71A6DF20DA8C}">
+            <Drive clsid="{935D1B74-9CB8-4e3c-9914-7DD559B7A417}" name="{{ drive_letter }}:" status="{{ drive_letter }}:" image="2" changed="2025-01-01 00:00:00" uid="{B7DA1854-CC67-4B8D-9C78-44E1B13F601A}">
+              <Properties action="U" thisDrive="NOCHANGE" allDrives="NOCHANGE" userName="" path="{{ unc_path }}" label="" persistent="1" useLetter="1" letter="{{ drive_letter }}"/>
+            </Drive>
+          </Drives>
+        dest: "\\\\{{ ansible_host }}\\SYSVOL\\gsb.local\\Policies\\{{ '{' }}{{ gpo_guid }}{{ '}' }}\\User\\Preferences\\Drives\\Drives.xml"
+      register: xml_creation
+
+    - name: Lier la GPO à l'OU du groupe
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+
+        $gpoName = "{{ gpo_name }}"
+        $ouPath = "{{ ou_path }}"
+
+        # Vérifier si le lien existe déjà
+        $existingLink = Get-GPInheritance -Target $ouPath |
+                       Select-Object -ExpandProperty GpoLinks |
+                       Where-Object { $_.DisplayName -eq $gpoName }
+
+        if (-not $existingLink) {
+            New-GPLink -Name $gpoName -Target $ouPath -LinkEnabled Yes
+            Write-Output "GPO_LINKED:$ouPath"
+        } else {
+            Write-Output "GPO_ALREADY_LINKED:$ouPath"
+        }
+      register: gpo_link
+      when: ou_name is defined
+
+    - name: Configurer le filtrage de sécurité pour le groupe AD
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+        $gpoName = "{{ gpo_name }}"
+        $groupName = "{{ ad_group }}"
+        Set-GPPermission -Name $gpoName -TargetName 'Authenticated Users' -TargetType Group -PermissionLevel None -Replace
+        Set-GPPermission -Name $gpoName -TargetName $groupName -TargetType Group -PermissionLevel GpoApply
+        Write-Output "SECURITY_FILTERING_CONFIGURED:$groupName"
+      register: gpo_security
+
+    - name: Forcer la mise à jour de la GPO
+      ansible.windows.win_shell: |
+        gpupdate /force
+      ignore_errors: yes
+
+    - name: Afficher le résumé de la configuration
+      ansible.builtin.debug:
+        msg: |
+          ╔════════════════════════════════════════════════════════════╗
+          ║  GPO de Mappage de Lecteur Configurée avec Succès          ║
+          ╚════════════════════════════════════════════════════════════╝
+
+          📋 Informations de la GPO :
+          ├─ Nom GPO        : {{ gpo_name }}
+          ├─ Lecteur mappé  : {{ drive_letter }}:
+          ├─ Chemin réseau  : {{ unc_path }}
+          ├─ Groupe cible   : {{ ad_group }}
+          {% if ou_name is defined %}├─ OU liée        : {{ ou_name }}{% endif %}
+
+
+          ✅ Configuration appliquée :
+          ├─ Mappage persistant activé
+          ├─ Filtrage de sécurité configuré pour {{ ad_group }}
+          {% if ou_name is defined %}├─ GPO liée à l'OU {{ ou_name }}{% endif %}
+
+
+          🔄 Pour appliquer sur les clients :
+          ├─ Les utilisateurs du groupe {{ ad_group }} recevront le lecteur au prochain logon
+          ├─ Pour forcer immédiatement : gpupdate /force sur le client
+          ├─ Le lecteur {{ drive_letter }}: pointera vers {{ unc_path }}
+
+
+          📌 Vérification :
+          └─ Ouvrir "Gestion des stratégies de groupe" (gpmc.msc)
+             └─ {{ gpo_name }} > Configuration utilisateur > Préférences > Paramètres Windows > Mappages de lecteurs

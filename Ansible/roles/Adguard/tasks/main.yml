@@ -13,7 +13,7 @@
 - name: Extraire AdGuard
   ansible.builtin.unarchive:
     src: /tmp/AdGuardHome.tar.gz
-    dest: /tmp 
+    dest: /tmp
     remote_src: yes
   when: not __adguard_check.stat.exists
 
