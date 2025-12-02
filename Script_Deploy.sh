@@ -329,6 +329,7 @@ for CT in "${DOCKER_LXC_LIST[@]}"; do
       echo "lxc.cap.drop=" >> "$LXC_CONF"
       echo "lxc.cgroup2.devices.allow=a" >> "$LXC_CONF"
       echo "lxc.mount.auto=proc:rw sys:rw" >> "$LXC_CONF"
+      echo "features: nesting=1,keyctl=1" >> "$LXC_CONF"
       echo "[✔] Configuration Docker ajoutée pour le conteneur $CT"
     else
       echo "[!] Configuration Docker déjà présente pour le conteneur $CT"
