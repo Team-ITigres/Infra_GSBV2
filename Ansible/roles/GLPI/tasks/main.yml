@@ -65,13 +65,15 @@
   delegate_to: localhost
   when: glpi_install.changed or glpi_update.changed
 
-- name: Changer le mot de passe admin glpi
+- name: Changer le mot de passe admin glpi via SQL
   community.docker.docker_container_exec:
     container: glpi_db
     command: >
-      mysql -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
-      -e "UPDATE glpi_users SET password=MD5('{{ glpi_admin_password }}') WHERE name='glpi';"
+      bash -c "mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+      -e \"UPDATE glpi_users SET password=MD5('{{ glpi_admin_password }}') WHERE name='glpi';\""
   when: glpi_admin_password != 'glpi'
+  register: password_change
+  failed_when: false
 
 - name: Configurer LDAP si activé
   ansible.builtin.include_tasks: configure_ldap.yml
