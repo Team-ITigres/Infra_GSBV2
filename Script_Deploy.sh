@@ -20,9 +20,10 @@ CHEMIN_TEMPLATE="local:vztmpl/$LXC_TEMPLATE_FILENAME"
 CONTAINER_SSH_PORT=22
 node=$(hostname)
 PM_API="https://172.16.0.253:8006/api2/json"
-TOKEN_USER="terraform-prov@pam"
+TOKEN_USER="terraform-prov@pve"
 TOKEN_NAME="auto-token"
-USER_ROLE="PVEAdmin"
+USER_ROLE="TerraformProv"
+TOKEN_PASSWORD="Formation13@TF"
 GITHUB_REPO="https://github.com/LeQ-letigre/Infra_GSBV2.git"
 
 
@@ -183,21 +184,31 @@ pct exec $CTID -- bash -c "echo '$PUB_KEY' > /root/.ssh/authorized_keys"
 pct exec $CTID -- chmod 600 /root/.ssh/authorized_keys
 
 # === 6. Authentification Proxmox et création du token ===
-echo "[+] Création du token Terraform sur Proxmox..."
+echo "[+] Configuration du rôle et de l'utilisateur Terraform sur Proxmox..."
 
+# Vérification/création du rôle TerraformProv
+if ! pveum role list | grep -q "^$USER_ROLE"; then
+  echo "[+] Création du rôle $USER_ROLE avec les privilèges nécessaires..."
+  pveum role add "$USER_ROLE" -privs "Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Monitor VM.Migrate VM.PowerMgmt SDN.Use"
+  echo "[+] Rôle $USER_ROLE créé avec succès."
+else
+  echo "[!] Le rôle $USER_ROLE existe déjà."
+fi
+
+# Suppression de l'utilisateur s'il existe déjà
 if pveum user list | grep -q "$TOKEN_USER"; then
   echo "[!] L'utilisateur $TOKEN_USER existe déjà. Suppression en cours..."
   pveum user delete "$TOKEN_USER"
 fi
 
-echo "[+] Vérification/création de l'utilisateur $TOKEN_USER"
-pveum user list | grep -q "^$TOKEN_USER" || {
-  pveum user add "$TOKEN_USER"
-  echo "[+] Utilisateur $TOKEN_USER créé."
-}
+# Création de l'utilisateur avec mot de passe
+echo "[+] Création de l'utilisateur $TOKEN_USER..."
+pveum user add "$TOKEN_USER" --password "$TOKEN_PASSWORD"
+echo "[+] Utilisateur $TOKEN_USER créé avec succès."
 
+# Attribution du rôle sur la racine /
 echo "[+] Attribution du rôle $USER_ROLE à $TOKEN_USER sur /"
-pveum acl modify / -user "$TOKEN_USER" -role "$USER_ROLE"
+pveum aclmod / -user "$TOKEN_USER" -role "$USER_ROLE"
 
 echo "[+] Création du token $TOKEN_NAME..."
 TOKEN_OUTPUT=$(pveum user token add "$TOKEN_USER" "$TOKEN_NAME" --privsep 0 --output-format json 2>/dev/null)
