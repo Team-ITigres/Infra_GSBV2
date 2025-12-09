@@ -11,7 +11,7 @@
   community.docker.docker_container_exec:
     container: glpi_db
     command: >
-      mysql -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+      mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
       -e "SELECT COUNT(*) FROM glpi_authldaps WHERE name='{{ glpi_ldap_name }}';"
   register: ldap_check
   changed_when: false
@@ -21,7 +21,7 @@
   community.docker.docker_container_exec:
     container: glpi_db
     command: >
-      mysql -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+      mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
       -e "INSERT INTO glpi_authldaps (
             name, host, port, basedn, rootdn, rootdn_passwd,
             login_field, use_tls, is_active, is_default, date_creation, date_mod
