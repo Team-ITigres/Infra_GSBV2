@@ -18,14 +18,14 @@ glpi_admin_user: "glpi"
 glpi_admin_password: "Formation13@"
 
 # LDAP Configuration (optionnel - mettre glpi_ldap_enabled: true pour activer)
-glpi_ldap_enabled: false
+glpi_ldap_enabled: true
 glpi_ldap_name: "Active Directory GSB"
-glpi_ldap_host: "ad.gsb.local"
-glpi_ldap_port: 636
+glpi_ldap_host: "172.16.0.1"
+glpi_ldap_port: 389
 glpi_ldap_basedn: "DC=gsb,DC=local"
-glpi_ldap_rootdn: "CN=glpi_bind,OU=Service Accounts,DC=gsb,DC=local"
+glpi_ldap_rootdn: "CN=Administrateur,CN=Users,DC=gsb,DC=local"
 glpi_ldap_password: "Formation13@"
-glpi_ldap_use_tls: true
+glpi_ldap_use_tls: false
 glpi_ldap_login_field: "samaccountname"
 
 # Backup Configuration
