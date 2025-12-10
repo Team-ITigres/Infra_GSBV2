@@ -11,7 +11,7 @@
 
 - name: Copier le docker-compose
   ansible.builtin.template:
-    src: /Infra_GSB/Ansible/roles/Uptime_Kuma/templates/docker-compose.yml
+    src: /Infra_GSBV2/Ansible/roles/Uptime_Kuma/templates/docker-compose.yml
     dest: /opt/Uptime_Kuma/docker-compose.yml
     remote_src: no
   when: not docker_compose_check.stat.exists 
