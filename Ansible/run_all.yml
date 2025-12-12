@@ -1,6 +1,9 @@
 ---
 # Playbook orchestrateur qui exécute tout dans le bon ordre
-# Utilise le fichier vars/generated_vars.yml déjà existant
+# Collecte d'abord les variables de manière interactive puis exécute tous les playbooks
+
+- name: Collecte des variables
+  import_playbook: collecte_variables.yml
 
 - name: Configuration Active Directory
   import_playbook: playbooks/Active_directory.yml
@@ -13,6 +16,9 @@
 
 - name: Blocage CMD
   import_playbook: playbooks/blocage_cmd.yml
+
+- name: Blocage Panneau de Configuration
+  import_playbook: playbooks/blocage_panneau_config.yml
 
 - name: Blocage de domaines AdGuard
   import_playbook: playbooks/bloquer_domaines_adguard.yml
