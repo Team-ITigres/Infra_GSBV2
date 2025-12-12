@@ -36,11 +36,11 @@
         remote_src: yes
         mode: '0600'
 
-    - name: Ajouter les domaines a la section blocked_hosts
+    - name: Ajouter les domaines a la section blocked_hosts (avec syntaxe wildcard)
       ansible.builtin.lineinfile:
         path: /opt/AdGuardHome/AdGuardHome.yaml
         insertafter: '^  blocked_hosts:'
-        line: "    - {{ item }}"
+        line: "    - ||{{ item }}^"
         state: present
       loop: "{{ domains }}"
       register: domains_added

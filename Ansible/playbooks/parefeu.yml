@@ -41,40 +41,49 @@
               - description is defined
             fail_msg: "Erreur : Les variables vlan_source, vlan_dest, service et description doivent etre definies"
 
-        - name: Attacher les VIF au ruleset INTERVLAN_POLICY
+        - name: Convertir vlan_dest en liste
+          ansible.builtin.set_fact:
+            dest_vlans: "{{ vlan_dest.split(',') if ',' in vlan_dest else [vlan_dest] }}"
+
+        - name: Afficher les VLANs de destination
+          ansible.builtin.debug:
+            msg: |
+              VLAN source : {{ vlan_source }}
+              VLANs de destination : {{ dest_vlans | join(', ') }}
+
+        - name: Attacher la VIF source au ruleset INTERVLAN_POLICY
           vyos.vyos.vyos_command:
             commands:
               - configure
               - set interfaces ethernet eth1 vif {{ vlan_source }} firewall in name INTERVLAN_POLICY
-              - set interfaces ethernet eth1 vif {{ vlan_dest }} firewall in name INTERVLAN_POLICY
               - commit
               - save
               - exit
-          register: vif_attachment
+          register: vif_source_attachment
+
+        - name: Attacher toutes les VIF de destination au ruleset INTERVLAN_POLICY
+          vyos.vyos.vyos_command:
+            commands:
+              - configure
+              - set interfaces ethernet eth1 vif {{ item }} firewall in name INTERVLAN_POLICY
+              - commit
+              - save
+              - exit
+          loop: "{{ dest_vlans }}"
+          register: vif_dest_attachment
 
         - name: Afficher le resultat de l'attachement des VIF
           ansible.builtin.debug:
-            msg: "VIF {{ vlan_source }} et {{ vlan_dest }} attachees au ruleset INTERVLAN_POLICY"
+            msg: "VIF {{ vlan_source }} et VIF {{ dest_vlans | join(', ') }} attachees au ruleset INTERVLAN_POLICY"
 
         - name: Determiner le port du service et le protocole
           ansible.builtin.set_fact:
             port_number: "{{ service_ports[service] | default(service) }}"
             protocol: "{{ 'icmp' if (service_ports[service] | default(service)) == 'icmp' else ('all' if (service_ports[service] | default(service)) == 'all' else 'tcp_udp') }}"
 
-        - name: Construire les noms des sous-interfaces
+        - name: Construire le nom de l'interface source
           ansible.builtin.set_fact:
             source_interface: "eth1.{{ vlan_source }}"
-            dest_interface: "eth1.{{ vlan_dest }}"
-
-        - name: Afficher les informations de la regle
-          ansible.builtin.debug:
-            msg: |
-              Configuration pare-feu :
-              - Ruleset : INTERVLAN_POLICY
-              - VLAN source : {{ vlan_source }} ({{ source_interface }})
-              - VLAN dest : {{ vlan_dest }} ({{ dest_interface }})
-              - Service : {{ service }} ({{ protocol }} port {{ port_number }})
-              - Description : {{ description }}
 
         - name: Recuperer le dernier numero de regle
           vyos.vyos.vyos_command:
@@ -86,69 +95,26 @@
           ansible.builtin.set_fact:
             last_rule_num: "{{ ruleset_output.stdout[0] | regex_findall('rule (\\d+)') | map('int') | max | default(0) }}"
 
-        - name: Calculer le nouveau numero de regle
-          ansible.builtin.set_fact:
-            new_rule_num: "{{ (last_rule_num | int + 10) }}"
-
-        - name: Bloquer un service TCP/UDP
-          vyos.vyos.vyos_command:
-            commands:
-              - configure
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} action drop
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} description "{{ description }}"
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} protocol tcp_udp
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} source group address-group NETv4_{{ source_interface }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination group address-group NETv4_{{ dest_interface }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination port {{ port_number }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} log enable
-              - commit
-              - save
-              - exit
-          when: protocol == 'tcp_udp'
-
-        - name: Bloquer ICMP (ping)
-          vyos.vyos.vyos_command:
-            commands:
-              - configure
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} action drop
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} description "{{ description }}"
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} protocol icmp
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} source group address-group NETv4_{{ source_interface }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination group address-group NETv4_{{ dest_interface }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} log enable
-              - commit
-              - save
-              - exit
-          when: protocol == 'icmp'
-
-        - name: Bloquer tout le trafic
-          vyos.vyos.vyos_command:
-            commands:
-              - configure
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} action drop
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} description "{{ description }}"
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} source group address-group NETv4_{{ source_interface }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination group address-group NETv4_{{ dest_interface }}
-              - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} log enable
-              - commit
-              - save
-              - exit
-          when: protocol == 'all'
+        - name: Creer les regles pour chaque VLAN de destination
+          include_tasks: parefeu_create_rule.yml
+          loop: "{{ dest_vlans }}"
+          loop_control:
+            loop_var: current_dest_vlan
+            index_var: vlan_index
 
         - name: Afficher le resume
           ansible.builtin.debug:
             msg: |
               ================================================================
-              Regle de pare-feu creee avec succes
+              Regles de pare-feu creees avec succes
               ================================================================
 
               Ruleset : INTERVLAN_POLICY
-              Numero de regle : {{ new_rule_num }}
+              Source : VLAN {{ vlan_source }} ({{ source_interface }})
+              Destinations : {{ dest_vlans | join(', ') }}
+              Service bloque : {{ service }} ({{ protocol }})
+              Description : {{ description }}
 
-              Details :
-              - Source : VLAN {{ vlan_source }} ({{ source_interface }})
-              - Destination : VLAN {{ vlan_dest }} ({{ dest_interface }})
-              - Service bloque : {{ service }} ({{ protocol }} {{ port_number if protocol == 'tcp_udp' else '' }})
-              - Description : {{ description }}
+              Nombre de regles creees : {{ dest_vlans | length }}
 
       when: firewall_rule is defined and firewall_rule == "oui"

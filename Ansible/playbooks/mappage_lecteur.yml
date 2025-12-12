@@ -25,7 +25,7 @@
     - name: Construire les variables
       ansible.builtin.set_fact:
         gpo_name: "Map_{{ folder_name }}_{{ ou_name }}"
-        unc_path: "\\\\{{ server_ip | default('172.16.0.1') }}\\{{ folder_name }}"
+        unc_path: "\\\\{{ inventory_hostname }}\\{{ folder_name }}"
         ou_path: "OU={{ ou_name }},DC=gsb,DC=local"
 
     - name: Afficher les informations de la GPO
