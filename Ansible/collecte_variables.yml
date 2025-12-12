@@ -37,6 +37,10 @@
       prompt: "Veux-tu bloquer l'acces au CMD ? (oui/non)"
       private: no
 
+    - name: block_control_panel
+      prompt: "Veux-tu bloquer l'acces au Panneau de Configuration ? (oui/non)"
+      private: no
+
     - name: domain_count
       prompt: "Combien de domaines veux-tu bloquer ?"
       private: no
@@ -292,6 +296,7 @@
           folder_name: "{{ folder_name }}"
           drive_letter: "{{ drive_letter }}"
           block_cmd: "{{ block_cmd }}"
+          block_control_panel: "{{ block_control_panel }}"
 
           vlan_id: {{ vlan_id }}
           vlan_name: "{{ vlan_name }}"

@@ -1,0 +1,92 @@
+---
+- name: Creer une GPO pour bloquer l'acces au Panneau de Configuration
+  hosts: WinSRV01
+  gather_facts: no
+
+  tasks:
+    - name: Verifier que les variables sont definies
+      ansible.builtin.assert:
+        that:
+          - ou_name is defined
+          - group_name is defined
+          - block_control_panel is defined
+        fail_msg: "Erreur : Les variables ou_name, group_name et block_control_panel doivent etre definies"
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Construire les variables
+      ansible.builtin.set_fact:
+        gpo_name: "Block_ControlPanel_{{ group_name }}"
+        ou_path: "OU={{ ou_name }},DC=gsb,DC=local"
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Afficher les informations de la GPO
+      ansible.builtin.debug:
+        msg: |
+          Creation de la GPO de blocage Panneau de Configuration :
+          - Nom : {{ gpo_name }}
+          - OU cible : {{ ou_name }}
+          - Groupe cible : {{ group_name }}
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Creer la GPO pour bloquer le Panneau de Configuration
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+
+        $gpoName = "{{ gpo_name }}"
+        $gpoExists = Get-GPO -Name $gpoName -ErrorAction SilentlyContinue
+
+        if (-not $gpoExists) {
+            $gpo = New-GPO -Name $gpoName -Comment "Blocage de l'acces au Panneau de Configuration pour le groupe {{ group_name }}"
+            Write-Output "GPO_CREATED"
+        } else {
+            $gpo = $gpoExists
+            Write-Output "GPO_EXISTS"
+        }
+
+        $gpo.Id.Guid
+      register: gpo_creation
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Extraire le GUID
+      ansible.builtin.set_fact:
+        gpo_guid: "{{ gpo_creation.stdout_lines[-1] }}"
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Configurer la valeur de registre pour bloquer le Panneau de Configuration
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+        Set-GPRegistryValue -Name "{{ gpo_name }}" -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ValueName "NoControlPanel" -Type DWord -Value 1
+        Write-Output "REGISTRY_CONFIGURED"
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Lier la GPO a l'OU
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+        $ouPath = "{{ ou_path }}"
+        $gpoName = "{{ gpo_name }}"
+
+        $existingLinks = Get-GPInheritance -Target $ouPath |
+          Select-Object -ExpandProperty GpoLinks |
+          Where-Object { $_.DisplayName -eq $gpoName }
+
+        if (-not $existingLinks) {
+            New-GPLink -Name $gpoName -Target $ouPath -LinkEnabled Yes | Out-Null
+            Write-Output "LINK_CREATED"
+        } else {
+            Write-Output "LINK_EXISTS"
+        }
+      when: block_control_panel is defined and block_control_panel == "oui"
+
+    - name: Configurer le filtrage de securite
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+        $gpoName = "{{ gpo_name }}"
+        $groupName = "{{ group_name }}"
+
+        try {
+            Set-GPPermission -Name $gpoName -TargetName 'Authenticated Users' -TargetType Group -PermissionLevel None -Replace -ErrorAction SilentlyContinue
+        } catch {}
+
+        Set-GPPermission -Name $gpoName -TargetName $groupName -TargetType Group -PermissionLevel GpoApply
+        Write-Output "SECURITY_FILTERING_CONFIGURED"
+      when: block_control_panel is defined and block_control_panel == "oui"
