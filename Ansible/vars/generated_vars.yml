@@ -1,47 +1,49 @@
 ou_name: "IT"
 group_name: "g_it"
 ou_path: "DC=gsb,DC=local"
-folder_name: "D_IT"
-drive_letter: "D"
+folder_name: "Partage_IT"
+drive_letter: "I"
 block_cmd: "non"
+block_control_panel: "non"
 
-vlan_id: 62
+vlan_id: 110
 vlan_name: "IT"
 
-id_vif: "62"
-ip_vif: "192.168.62.254/24"
-dhcp_start: "192.168.62.50"
-dhcp_stop: "192.168.62.200"
-dhcp_gateway: "192.168.62.254"
+id_vif: "110"
+ip_vif: "192.168.110.30/27"
+dhcp_start: "192.168.110.5"
+dhcp_stop: "192.168.110.29"
+dhcp_gateway: "192.168.110.30"
 dhcp_dns: "172.16.0.3"
 
 firewall_rule: "oui"
-vlan_source: "62"
-vlan_dest: "10"
-service: "http"
-description: "Bloquer HTTP du VLAN IT vers VLAN Admin"
+vlan_source: "110"
+vlan_dest: "300,400"
+service: "ssh"
+description: "Blocage ssh 110 vers VLANs 300 et 400"
 
 users:
-  - firstname: "Quentin"
-    lastname: "Magnan"
-    username: "quentin.magnan"
+  - firstname: "Julien"
+    lastname: "BENOIT"
+    username: "julien.benoit"
     password: "Formation13@"
-  - firstname: "Driss"
-    lastname: "Test"
-    username: "driss.test"
+  - firstname: "Pauline"
+    lastname: "MARTIN"
+    username: "pauline.martin"
     password: "Formation13@"
 
 domains:
-  - "amazon.fr"
+  - "franceinfo.fr"
+  - "facebook.com"
 
 switch_ports:
   Sw01:
-    access_ports:
-      - "gi9"
+    access_ports: []
     trunk_ports:
-      - "gi2"
+      - "gi1"
+      - "gi5"
+      - "gi6"
   Sw02:
     access_ports:
       - "gi8"
-    trunk_ports:
-      - "gi9"
+    trunk_ports: []

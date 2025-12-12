@@ -94,7 +94,7 @@
 
         - name: Demander le VLAN destination
           ansible.builtin.pause:
-            prompt: "VLAN destination pour la règle de pare-feu (ex: 10)"
+            prompt: "VLAN(s) destination pour la règle de pare-feu (ex: 300 ou 300,400 pour plusieurs)"
           register: fw_vlan_dest
 
         - name: Demander le service

@@ -1,0 +1,61 @@
+---
+- name: Construire le nom de l'interface de destination
+  ansible.builtin.set_fact:
+    dest_interface: "eth1.{{ current_dest_vlan }}"
+
+- name: Calculer le numero de regle pour ce VLAN
+  ansible.builtin.set_fact:
+    new_rule_num: "{{ (last_rule_num | int + 10 + (vlan_index * 10)) }}"
+
+- name: Afficher les informations de la regle
+  ansible.builtin.debug:
+    msg: |
+      Creation de la regle {{ new_rule_num }} :
+      - Source : VLAN {{ vlan_source }} ({{ source_interface }})
+      - Destination : VLAN {{ current_dest_vlan }} ({{ dest_interface }})
+      - Service : {{ service }} ({{ protocol }})
+
+- name: Bloquer un service TCP/UDP
+  vyos.vyos.vyos_command:
+    commands:
+      - configure
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} action drop
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} description "{{ description }} ({{ vlan_source }} -> {{ current_dest_vlan }})"
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} protocol tcp_udp
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} source group address-group NETv4_{{ source_interface }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination group address-group NETv4_{{ dest_interface }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination port {{ port_number }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} log enable
+      - commit
+      - save
+      - exit
+  when: protocol == 'tcp_udp'
+
+- name: Bloquer ICMP (ping)
+  vyos.vyos.vyos_command:
+    commands:
+      - configure
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} action drop
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} description "{{ description }} ({{ vlan_source }} -> {{ current_dest_vlan }})"
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} protocol icmp
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} source group address-group NETv4_{{ source_interface }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination group address-group NETv4_{{ dest_interface }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} log enable
+      - commit
+      - save
+      - exit
+  when: protocol == 'icmp'
+
+- name: Bloquer tout le trafic
+  vyos.vyos.vyos_command:
+    commands:
+      - configure
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} action drop
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} description "{{ description }} ({{ vlan_source }} -> {{ current_dest_vlan }})"
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} source group address-group NETv4_{{ source_interface }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} destination group address-group NETv4_{{ dest_interface }}
+      - set firewall name INTERVLAN_POLICY rule {{ new_rule_num }} log enable
+      - commit
+      - save
+      - exit
+  when: protocol == 'all'
