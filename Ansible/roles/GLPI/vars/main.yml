@@ -1,12 +1,3 @@
 ---
-
-# Base de donné mysql 
-mysql_root_user: glpi
-mysql_root_password: "Formation13@"
-glpi_db_name: glpidb
-glpi_db_user: glpi
-glpi_db_password: "glpipassword"
-
-# Var de la version glpi 
-glpi_version: "10.0.19"
-glpi_archive_url: "https://github.com/glpi-project/glpi/releases/download/{{ glpi_version }}/glpi-{{ glpi_version }}.tgz"
+# Ce fichier est vide - toute la configuration est dans defaults/main.yml
+# Ne pas définir de variables ici car elles écraseront les defaults
