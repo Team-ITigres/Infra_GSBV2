@@ -21,7 +21,10 @@ services:
       retries: 3
 
   glpi:
-    image: glpi/glpi:{{ glpi_version }}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: glpi-custom:{{ glpi_version }}
     container_name: glpi
     restart: unless-stopped
     ports:

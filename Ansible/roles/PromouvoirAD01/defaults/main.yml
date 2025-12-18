@@ -2,3 +2,6 @@ dns_domain: gsb.local
 netbios_name: GSB
 admin_password: Formation13@
 admin_pass: Formation13@
+
+# Compte de service GLPI pour LDAP
+glpi_ldap_password: "Formation13@"

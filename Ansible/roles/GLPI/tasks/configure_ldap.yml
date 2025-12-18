@@ -7,58 +7,109 @@
     timeout: 10
   delegate_to: localhost
 
-- name: Supprimer l'ancienne configuration LDAP si elle existe
+- name: Copier le script PHP de configuration LDAP sur l'hôte
+  ansible.builtin.copy:
+    src: configure_ldap.php
+    dest: /tmp/configure_ldap.php
+    mode: '0644'
+
+- name: Copier le script PHP dans le conteneur GLPI
+  ansible.builtin.command: docker cp /tmp/configure_ldap.php glpi:/tmp/configure_ldap.php
+  changed_when: true
+
+- name: Configurer LDAP via le script PHP GLPI (avec chiffrement correct du mot de passe)
   community.docker.docker_container_exec:
-    container: glpi_db
-    command: mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }} -e "DELETE FROM glpi_authldaps WHERE name='{{ glpi_ldap_name }}';"
+    container: glpi
+    command: >
+      php /tmp/configure_ldap.php
+      "{{ glpi_ldap_name }}"
+      "{{ glpi_ldap_host }}"
+      "{{ glpi_ldap_port }}"
+      "{{ glpi_ldap_basedn }}"
+      "{{ glpi_ldap_rootdn }}"
+      "{{ glpi_ldap_password }}"
+      "{{ glpi_ldap_login_field }}"
+      "{{ glpi_ldap_sync_field }}"
+      "{{ glpi_ldap_condition }}"
+      "{{ glpi_ldap_email_field }}"
+      "{{ glpi_ldap_realname_field }}"
+      "{{ glpi_ldap_firstname_field }}"
+      "{{ glpi_ldap_phone_field }}"
+      "{{ glpi_ldap_title_field }}"
+      "{{ glpi_ldap_group_field }}"
+      "{{ glpi_ldap_group_condition }}"
+  register: ldap_config
+  changed_when: true
+
+- name: Nettoyer le script PHP temporaire dans le conteneur
+  community.docker.docker_container_exec:
+    container: glpi
+    command: rm -f /tmp/configure_ldap.php
   changed_when: false
   failed_when: false
 
-- name: Créer le script SQL temporaire pour la configuration LDAP
-  ansible.builtin.copy:
-    content: |
-      INSERT INTO glpi_authldaps (
-        name, host, port, basedn, rootdn, rootdn_passwd,
-        login_field, sync_field, use_tls, is_active, is_default,
-        `condition`, use_bind, date_creation, date_mod
-      ) VALUES (
-        '{{ glpi_ldap_name }}',
-        '{{ glpi_ldap_host }}',
-        {{ glpi_ldap_port }},
-        '{{ glpi_ldap_basedn }}',
-        '{{ glpi_ldap_rootdn }}',
-        '{{ glpi_ldap_password }}',
-        '{{ glpi_ldap_login_field }}',
-        'objectguid',
-        {{ '1' if glpi_ldap_use_tls else '0' }},
-        1,
-        1,
-        '(objectClass=user)',
-        1,
-        NOW(),
-        NOW()
-      );
-    dest: /tmp/glpi_ldap_config.sql
-    mode: '0644'
+- name: Nettoyer le script PHP temporaire sur l'hôte
+  ansible.builtin.file:
+    path: /tmp/configure_ldap.php
+    state: absent
 
-- name: Copier le script SQL dans le conteneur
-  ansible.builtin.command:
-    cmd: docker cp /tmp/glpi_ldap_config.sql glpi_db:/tmp/glpi_ldap_config.sql
+# ldap-utils est maintenant inclus dans l'image Docker personnalisée via le Dockerfile
+# Le mot de passe est maintenant correctement chiffré par le script PHP GLPI
 
-- name: Exécuter la configuration LDAP
+- name: Vérifier la configuration LDAP dans la base de données
   community.docker.docker_container_exec:
     container: glpi_db
-    command: /bin/sh -c "mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }} < /tmp/glpi_ldap_config.sql"
+    command: >
+      bash -c "mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+      -e \"SELECT id, name, host, port, basedn, login_field, is_active, can_support_pagesize, pagesize FROM glpi_authldaps WHERE name='{{ glpi_ldap_name }}';\""
+  register: ldap_verify
+  changed_when: false
 
-- name: Nettoyer les fichiers temporaires
-  ansible.builtin.file:
-    path: /tmp/glpi_ldap_config.sql
-    state: absent
+- name: Tester la recherche LDAP réelle avec ldapsearch (test fonctionnel)
+  community.docker.docker_container_exec:
+    container: glpi
+    command: >
+      bash -c "echo '{{ glpi_ldap_password }}' | ldapsearch -x -LLL
+      -H ldap://{{ glpi_ldap_host }}:{{ glpi_ldap_port }}
+      -D '{{ glpi_ldap_rootdn }}'
+      -w '{{ glpi_ldap_password }}'
+      -b '{{ glpi_ldap_basedn }}'
+      '(objectClass=user)'
+      samaccountname | head -20"
+  register: ldap_search_test
+  changed_when: false
+  failed_when: false
+
+- name: Afficher le résultat du test LDAP réel
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "Test de recherche LDAP avec ldapsearch:"
+      - "{{ ldap_search_test.stdout if ldap_search_test.rc == 0 else 'ÉCHEC: ' + ldap_search_test.stderr }}"
+      - "=========================================="
+  when: ldap_search_test is defined
 
 - name: Afficher le statut de la configuration LDAP
   ansible.builtin.debug:
     msg:
+      - "=========================================="
       - "Configuration LDAP appliquée avec succès"
       - "Serveur: {{ glpi_ldap_host }}:{{ glpi_ldap_port }}"
       - "Base DN: {{ glpi_ldap_basedn }}"
+      - "RootDN: {{ glpi_ldap_rootdn }}"
+      - "Login field: {{ glpi_ldap_login_field }}"
+      - "Sync field: {{ glpi_ldap_sync_field }}"
       - "TLS: {{ 'Activé' if glpi_ldap_use_tls else 'Désactivé' }}"
+      - "Condition: Exclut comptes désactivés"
+      - "=========================================="
+      - "⚠️  IMPORTANT: Le test LDAP dans GLPI est TROMPEUR !"
+      - "Il teste uniquement la CONNEXION, pas la RECHERCHE."
+      - "Si 'no user to be imported', vérifiez:"
+      - "1. Que ldapsearch fonctionne (voir résultat ci-dessus)"
+      - "2. Que le mot de passe est bien enregistré en DB"
+      - "3. Les logs: docker exec glpi tail /var/www/html/files/_log/php-errors.log"
+      - "=========================================="
+      - "Test manuel de diagnostic:"
+      - "docker exec glpi ldapsearch -x -LLL -H ldap://{{ glpi_ldap_host }} \\"
+      - "  -D '{{ glpi_ldap_rootdn }}' -w '{{ glpi_ldap_password }}' \\"
+      - "  -b '{{ glpi_ldap_basedn }}' '(objectClass=user)' samaccountname"
