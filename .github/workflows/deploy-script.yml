@@ -1,0 +1,22 @@
+name: Deploy Script to WebServer
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Script_Deploy.sh'
+
+jobs:
+  deploy-script:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Deploy script via SCP
+        run: |
+          scp -i /home/github-runner/.ssh/m2shelper_key \
+            -o StrictHostKeyChecking=no \
+            Script_Deploy.sh \
+            root@192.168.1.201:/var/www/html/scripts/deploy-infra-gsb.sh
