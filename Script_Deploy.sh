@@ -434,6 +434,3 @@ ansible-playbook Install_InfraGSB.yml
 EOF
 
 echo "✅ Déploiement complet terminé avec succès."
-
-
-#test3
