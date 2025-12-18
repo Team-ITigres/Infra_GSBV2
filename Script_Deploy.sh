@@ -24,7 +24,7 @@ TOKEN_USER="terraform-prov@pve"
 TOKEN_NAME="auto-token"
 USER_ROLE="TerraformProv"
 TOKEN_PASSWORD="Formation13@TF"
-GITHUB_REPO="https://github.com/LeQ-letigre/Infra_GSBV2.git"
+GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
 
 
 # 0.5 Téléchgement des templates OpnSenses
