@@ -422,28 +422,3 @@
         dest: vars/generated_vars.yml
         content: "{{ vars_content }}"
         mode: '0644'
-
-    - name: Afficher confirmation
-      ansible.builtin.debug:
-        msg:
-          - "====================================="
-          - "✅ Fichier généré: vars/generated_vars.yml"
-          - "====================================="
-          - "📊 Résumé de la collecte:"
-          - "   - {{ users | length }} utilisateur(s) créé(s)"
-          - "   - {{ domains | length }} domaine(s) à bloquer"
-          - "   - {{ switches | length }} switch(s) configuré(s)"
-          - "====================================="
-          - ""
-          - "🚀 Prochaine étape:"
-<<<<<<< HEAD
-          - "   Exécuter: ansible-playbook Ansible/run_all.yml"
-=======
-          - "   Exécuter: ansible-playbook Ansible/epreuve_E6.yml"
->>>>>>> main
-          - ""
-          - "   Ou exécuter les playbooks individuellement:"
-          - "   - ansible-playbook Ansible/playbooks/Active_directory.yml"
-          - "   - ansible-playbook Ansible/playbooks/switchs.yml"
-          - "   - etc."
-          - "====================================="
