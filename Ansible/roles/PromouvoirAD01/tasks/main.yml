@@ -14,7 +14,7 @@
     include_management_tools: yes
 
 - name: Définir le fuseau horaire
-  win_timezone:
+  ansible.windows.win_timezone:
     timezone: "Romance Standard Time"
 
 - name: Promouvoir le serveur en contrôleur de domaine principal
@@ -26,3 +26,31 @@
     forest_mode: "WinThreshold"
     domain_mode: "WinThreshold"
     reboot: true
+
+- name: Attendre que le contrôleur de domaine soit complètement opérationnel
+  ansible.builtin.wait_for:
+    timeout: 60
+  delegate_to: localhost
+
+- name: Créer l'Unité d'Organisation pour les comptes de service
+  microsoft.ad.ou:
+    name: Comptes_Services
+    path: "DC=gsb,DC=local"
+    state: present
+    protect_from_deletion: true
+  register: ou_creation
+
+- name: Créer le compte de service GLPI pour LDAP
+  microsoft.ad.user:
+    name: glpi_bind
+    firstname: GLPI
+    surname: Service Account
+    upn: glpi_bind@gsb.local
+    password: "{{ glpi_ldap_password }}"
+    state: present
+    path: "OU=Comptes_Services,DC=gsb,DC=local"
+    password_never_expires: true
+    user_cannot_change_password: true
+    enabled: true
+    description: "Compte de service pour la synchronisation LDAP de GLPI"
+  register: glpi_bind_creation

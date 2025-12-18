@@ -10,6 +10,12 @@
     path: /opt/glpi/docker-compose.yml
   register: docker_compose_check
 
+- name: Copier le Dockerfile personnalisé
+  ansible.builtin.copy:
+    src: Dockerfile
+    dest: /opt/glpi/Dockerfile
+    mode: '0644'
+
 - name: Déployer le docker-compose.yml
   ansible.builtin.template:
     src: docker-compose.yml.j2
@@ -17,9 +23,10 @@
     mode: '0644'
   notify: Redémarrer GLPI
 
-- name: Lancer GLPI avec docker-compose
+- name: Construire l'image GLPI personnalisée
   community.docker.docker_compose_v2:
     project_src: /opt/glpi
+    build: always
     state: present
 
 - name: Attendre que la base de données soit prête
@@ -30,7 +37,7 @@
 - name: Vérifier si GLPI est déjà installé
   community.docker.docker_container_exec:
     container: glpi
-    command: php bin/console db:check
+    command: php bin/console db:check --allow-superuser
   register: glpi_check
   failed_when: false
   changed_when: false
@@ -45,6 +52,7 @@
       --db-user={{ glpi_mysql_user }}
       --db-password={{ glpi_mysql_password }}
       --default-language=fr_FR
+      --allow-superuser
       --no-interaction
   when: glpi_check.rc != 0
   register: glpi_install
@@ -52,7 +60,7 @@
 - name: Mettre à jour la base de données GLPI (si nécessaire)
   community.docker.docker_container_exec:
     container: glpi
-    command: php bin/console db:update --no-interaction
+    command: php bin/console db:update --allow-superuser --no-interaction
   when: glpi_check.rc == 0
   register: glpi_update
   failed_when:
