@@ -1,7 +1,7 @@
 ---
-- name: Construire le nom de l'interface de destination
+- name: Construire le nom de l'interface de destination pour les address-groups
   ansible.builtin.set_fact:
-    dest_interface: "eth1.{{ current_dest_vlan }}"
+    dest_interface: "{{ current_dest_vlan.split('/')[0] if '/' in current_dest_vlan else ('eth1.' + current_dest_vlan) }}"
 
 - name: Calculer le numero de regle pour ce VLAN
   ansible.builtin.set_fact:

@@ -51,21 +51,25 @@
               VLAN source : {{ vlan_source }}
               VLANs de destination : {{ dest_vlans | join(', ') }}
 
-        - name: Attacher la VIF source au ruleset INTERVLAN_POLICY
+        - name: Determiner l'interface source
+          ansible.builtin.set_fact:
+            source_eth_interface: "{{ vlan_source.split('/')[0] if '/' in vlan_source else 'eth1.vlan_source' }}"
+
+        - name: Attacher l'interface source au ruleset INTERVLAN_POLICY
           vyos.vyos.vyos_command:
             commands:
               - configure
-              - set interfaces ethernet eth1 vif {{ vlan_source }} firewall in name INTERVLAN_POLICY
+              - "{{ 'set interfaces ethernet ' + source_eth_interface + ' firewall in name INTERVLAN_POLICY' if '/' in vlan_source else 'set interfaces ethernet eth1 vif ' + vlan_source + ' firewall in name INTERVLAN_POLICY' }}"
               - commit
               - save
               - exit
           register: vif_source_attachment
 
-        - name: Attacher toutes les VIF de destination au ruleset INTERVLAN_POLICY
+        - name: Attacher toutes les interfaces de destination au ruleset INTERVLAN_POLICY
           vyos.vyos.vyos_command:
             commands:
               - configure
-              - set interfaces ethernet eth1 vif {{ item }} firewall in name INTERVLAN_POLICY
+              - "{{ 'set interfaces ethernet ' + item.split('/')[0] + ' firewall in name INTERVLAN_POLICY' if '/' in item else 'set interfaces ethernet eth1 vif ' + item + ' firewall in name INTERVLAN_POLICY' }}"
               - commit
               - save
               - exit
@@ -81,9 +85,9 @@
             port_number: "{{ service_ports[service] | default(service) }}"
             protocol: "{{ 'icmp' if (service_ports[service] | default(service)) == 'icmp' else ('all' if (service_ports[service] | default(service)) == 'all' else 'tcp_udp') }}"
 
-        - name: Construire le nom de l'interface source
+        - name: Construire le nom de l'interface source pour les address-groups
           ansible.builtin.set_fact:
-            source_interface: "eth1.{{ vlan_source }}"
+            source_interface: "{{ vlan_source.split('/')[0] if '/' in vlan_source else ('eth1.' + vlan_source) }}"
 
         - name: Recuperer le dernier numero de regle
           vyos.vyos.vyos_command:
