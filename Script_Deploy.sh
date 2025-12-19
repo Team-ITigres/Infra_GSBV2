@@ -25,6 +25,7 @@ TOKEN_NAME="auto-token"
 USER_ROLE="TerraformProv"
 TOKEN_PASSWORD="Formation13@TF"
 GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
+START_TIME=$(date +%s)
 
 
 # 0.5 Téléchgement des templates OpnSenses
@@ -151,27 +152,27 @@ else
   echo "[!] Le bridge vmbr2 existe déjà"
 fi
 
-# Vérifier si le bridge Sync existe déjà
-if ! ip link show Sync &>/dev/null; then
-  echo "[+] Création du bridge Sync..."
+# # Vérifier si le bridge Sync existe déjà
+# if ! ip link show Sync &>/dev/null; then
+#   echo "[+] Création du bridge Sync..."
 
-  # Vérifier si la configuration existe déjà dans le fichier
-  if ! grep -q "^auto Sync" /etc/network/interfaces; then
-    cat >> /etc/network/interfaces <<'EOF'
+#   # Vérifier si la configuration existe déjà dans le fichier
+#   if ! grep -q "^auto Sync" /etc/network/interfaces; then
+#     cat >> /etc/network/interfaces <<'EOF'
 
-auto Sync
-iface Sync inet manual
-        bridge-ports none
-        bridge-stp off
-        bridge-fd 0
-EOF
-    echo "[+] Configuration Sync ajoutée à /etc/network/interfaces"
-  else
-    echo "[!] Configuration Sync déjà présente dans /etc/network/interfaces"
-  fi
-else
-  echo "[!] Le bridge Sync existe déjà"
-fi
+# auto Sync
+# iface Sync inet manual
+#         bridge-ports none
+#         bridge-stp off
+#         bridge-fd 0
+# EOF
+#     echo "[+] Configuration Sync ajoutée à /etc/network/interfaces"
+#   else
+#     echo "[!] Configuration Sync déjà présente dans /etc/network/interfaces"
+#   fi
+# else
+#   echo "[!] Le bridge Sync existe déjà"
+# fi
 
 # Recharger les interfaces réseau
 echo "[+] Rechargement des interfaces réseau..."
@@ -180,22 +181,22 @@ if command -v ifreload &>/dev/null; then
 else
   echo "[!] ifreload non disponible, tentative avec ifup..."
   ifup vmbr2 2>/dev/null || true
-  ifup Sync 2>/dev/null || true
+#   ifup Sync 2>/dev/null || true
 fi
 
-# Vérifier que les bridges ont bien été créés
-if ip link show vmbr2 &>/dev/null; then
-  echo "[✔] Bridge vmbr2 créé avec succès"
-  ip addr show vmbr2
-else
-  echo "[❌] Échec de la création du bridge vmbr2"
-fi
+# # Vérifier que les bridges ont bien été créés
+# if ip link show vmbr2 &>/dev/null; then
+#   echo "[✔] Bridge vmbr2 créé avec succès"
+#   ip addr show vmbr2
+# else
+#   echo "[❌] Échec de la création du bridge vmbr2"
+# fi
 
-if ip link show Sync &>/dev/null; then
-  echo "[✔] Bridge Sync créé avec succès"
-else
-  echo "[❌] Échec de la création du bridge Sync"
-fi
+# if ip link show Sync &>/dev/null; then
+#   echo "[✔] Bridge Sync créé avec succès"
+# else
+#   echo "[❌] Échec de la création du bridge Sync"
+# fi
 
 # === 4. Création du conteneur LXC ===
 if pct status 110 &>/dev/null; then
@@ -295,7 +296,7 @@ ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" <<EOF
 #!/bin/bash
 set -e
 
-DISTRO="bookworm"
+DISTRO="trixie"
 GITHUB_REPO="$GITHUB_REPO"
 node="$node"
 
@@ -303,7 +304,7 @@ echo "🔧 Mise à jour des paquets..."
 apt update && apt upgrade -y
 
 echo "📦 Installation des outils de base..."
-apt install -y sudo curl wget gnupg lsb-release software-properties-common unzip python3 python3-pip python3-venv git locales
+apt install -y sudo curl wget gnupg lsb-release unzip python3 python3-pip python3-venv git locales
 
 echo "🌍 Correction des locales pour éviter les erreurs de type 'setlocale'..."
 sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
@@ -329,7 +330,7 @@ if ! grep -q "venvs/ansible" ~/.bashrc; then
 fi
 
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com bookworm main" > /etc/apt/sources.list.d/hashicorp.list
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com trixie main" > /etc/apt/sources.list.d/hashicorp.list
 apt update
 apt install -y terraform
 
@@ -356,10 +357,6 @@ mkdir -p ~/etc/ansible/keys
 cd /Infra_GSBV2/Terraform
 terraform init
 terraform apply -auto-approve
-
-echo "[+] Attente que les machines 172.16.0.2 et 172.16.0.1 soient en ligne..."
-while ! ping -c 1 -W 1 172.16.0.2 > /dev/null 2>&1; do sleep 1; done
-while ! ping -c 1 -W 1 172.16.0.1 > /dev/null 2>&1; do sleep 1; done
 
 EOF
 
@@ -402,7 +399,6 @@ done
 # === 9b. Attente de la connectivité réseau des conteneurs ===
 echo "[+] Attente de la connectivité réseau des conteneurs LXC..."
 # Attendre un peu que les conteneurs démarrent
-sleep 5
 
 for CT in "${DOCKER_LXC_LIST[@]}"; do
   if pct status "$CT" 2>/dev/null | grep -q "running"; then
@@ -416,6 +412,10 @@ for CT in "${DOCKER_LXC_LIST[@]}"; do
   fi
 done
 
+echo "[+] Attente que les machines 172.16.0.2 et 172.16.0.1 soient en ligne..."
+while ! ping -c 1 -W 1 172.16.0.2 > /dev/null 2>&1; do sleep 1; done
+while ! ping -c 1 -W 1 172.16.0.1 > /dev/null 2>&1; do sleep 1; done
+
 # === 10. Retour dans le conteneur terransible pour Ansible ===
 echo "[+] Connexion au conteneur terransible pour déploiement Ansible..."
 
@@ -424,9 +424,6 @@ ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" <<EOF
 #!/bin/bash
 set -e
 
-echo "[+] Activation du venv Ansible..."
-source ~/venvs/ansible/bin/activate
-
 cd /Infra_GSBV2/Ansible
 ansible-galaxy install -r requirements.yml
 ansible-playbook Install_InfraGSB.yml
@@ -434,3 +431,7 @@ ansible-playbook Install_InfraGSB.yml
 EOF
 
 echo "✅ Déploiement complet terminé avec succès."
+
+DURATION=$(($(date +%s) - START_TIME))
+
+echo "Temps d'exécution: ${DURATION} secondes"
