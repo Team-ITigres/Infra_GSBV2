@@ -13,7 +13,7 @@ IP_SETUP="$IP/24"
 GW="172.16.0.254"
 BRIDGE="vmbr0"
 SSH_KEY_PATH="/root/.ssh/terransible"
-LXC_TEMPLATE_FILENAME="debian-12-standard_12.7-1_amd64.tar.zst"
+LXC_TEMPLATE_FILENAME="debian-13-standard_13.1-2_amd64.tar.zst"
 LXC_TEMPLATE="/var/lib/vz/template/cache/$LXC_TEMPLATE_FILENAME"
 LXC_TEMPLATE_URL="http://download.proxmox.com/images/system/$LXC_TEMPLATE_FILENAME"
 CHEMIN_TEMPLATE="local:vztmpl/$LXC_TEMPLATE_FILENAME"
@@ -108,8 +108,8 @@ for VM in "${VM_LIST[@]}"; do
 done
 
 # === 1. Télécharger l'ISO LXC ===
-# Lxc Debian 12
-echo "[+] Vérification de l'image Debian 12 LXC..."
+# Lxc Debian 13
+echo "[+] Vérification de l'image Debian 13 LXC..."
 if [ ! -f "$LXC_TEMPLATE" ]; then
   echo "[+] Téléchargement de l'image LXC $LXC_TEMPLATE_FILENAME..."
   wget -O "$LXC_TEMPLATE" "$LXC_TEMPLATE_URL"
