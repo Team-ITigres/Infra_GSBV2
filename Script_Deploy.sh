@@ -36,39 +36,6 @@ GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
 START_TIME=$(date +%s)
 
 
-# 0.5 Téléchgement des templates OpnSenses
-
-# if [ ! -f /var/lib/vz/dump/opnsense-master.vma.zst ]; then
-#   wget --no-check-certificate -O /var/lib/vz/dump/opnsense-master.vma.zst https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/opnsense-master.vma.zst
-# fi
-
-# if [ ! -f /var/lib/vz/dump/opnsense-backup.vma.zst ]; then
-#   wget --no-check-certificate -O /var/lib/vz/dump/opnsense-backup.vma.zst https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/opnsense-backup.vma.zst
-# fi
-
-# if qm status 2100 &>/dev/null; then
-#     qm destroy 2100 --purge
-# fi
-
-# if qm status 2101 &>/dev/null; then
-#     qm destroy 2101 --purge
-# fi
-
-# # 2) Restaurer les OpnSenses
-# qmrestore /var/lib/vz/dump/opnsense-master.vma.zst  2100 --storage local-lvm --unique 1
-# qm set 2100 --name "OpnSense-Master-Template"
-
-# # 3) Marquer en template
-# qm template 2100
-
-# # 2) Restaurer les OpnSenses
-# qmrestore /var/lib/vz/dump/opnsense-backup.vma.zst  2101 --storage local-lvm --unique 1
-# qm set 2101 --name "OpnSense-Backup-Template"
- 
-# # 3) Marquer en template
-# qm template 2101
-
-
 # 1) Télécharger la backup du win srv 2022
 if [ ! -f /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst ]; then
   wget --no-check-certificate -O /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst
@@ -160,28 +127,6 @@ else
   echo "[!] Le bridge vmbr2 existe déjà"
 fi
 
-# # Vérifier si le bridge Sync existe déjà
-# if ! ip link show Sync &>/dev/null; then
-#   echo "[+] Création du bridge Sync..."
-
-#   # Vérifier si la configuration existe déjà dans le fichier
-#   if ! grep -q "^auto Sync" /etc/network/interfaces; then
-#     cat >> /etc/network/interfaces <<'EOF'
-
-# auto Sync
-# iface Sync inet manual
-#         bridge-ports none
-#         bridge-stp off
-#         bridge-fd 0
-# EOF
-#     echo "[+] Configuration Sync ajoutée à /etc/network/interfaces"
-#   else
-#     echo "[!] Configuration Sync déjà présente dans /etc/network/interfaces"
-#   fi
-# else
-#   echo "[!] Le bridge Sync existe déjà"
-# fi
-
 # Recharger les interfaces réseau
 echo "[+] Rechargement des interfaces réseau..."
 if command -v ifreload &>/dev/null; then
@@ -189,22 +134,7 @@ if command -v ifreload &>/dev/null; then
 else
   echo "[!] ifreload non disponible, tentative avec ifup..."
   ifup vmbr2 2>/dev/null || true
-#   ifup Sync 2>/dev/null || true
 fi
-
-# # Vérifier que les bridges ont bien été créés
-# if ip link show vmbr2 &>/dev/null; then
-#   echo "[✔] Bridge vmbr2 créé avec succès"
-#   ip addr show vmbr2
-# else
-#   echo "[❌] Échec de la création du bridge vmbr2"
-# fi
-
-# if ip link show Sync &>/dev/null; then
-#   echo "[✔] Bridge Sync créé avec succès"
-# else
-#   echo "[❌] Échec de la création du bridge Sync"
-# fi
 
 # === 4. Création du conteneur LXC ===
 if pct status 110 &>/dev/null; then
@@ -226,7 +156,8 @@ pct create $CTID "$LXC_TEMPLATE" \
   -rootfs local-lvm:8 \
   -features nesting=1 \
   -password Formation13@ \
-  -unprivileged 0
+  -unprivileged 0 \
+  -nesting 1
 echo "[+] Démarrage du conteneur..."
 pct start $CTID
 
@@ -281,11 +212,6 @@ fi
 
 export TF_TOKEN_ID="$TOKEN_USER!$TOKEN_NAME"
 export TF_TOKEN_SECRET=$(echo "$TOKEN_OUTPUT" | jq -r '.value')
-
-echo ""
-echo "Token créé avec succès :"
-echo "TF_TOKEN_ID     = $TF_TOKEN_ID"
-echo "TF_TOKEN_SECRET = $TF_TOKEN_SECRET"
 
 # === 8. Connexion au conteneur pour setup ===
 echo "[+] Connexion au conteneur pour déploiement Terraform + Ansible..."
