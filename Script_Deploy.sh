@@ -157,7 +157,6 @@ pct create $CTID "$LXC_TEMPLATE" \
   -features nesting=1 \
   -password Formation13@ \
   -unprivileged 0 \
-  -nesting 1
 echo "[+] Démarrage du conteneur..."
 pct start $CTID
 
