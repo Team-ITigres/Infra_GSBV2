@@ -7,6 +7,7 @@
     timeout: 10
   delegate_to: localhost
 
+<<<<<<< HEAD
 - name: Copier le script PHP de configuration LDAP sur l'hôte
   ansible.builtin.copy:
     src: configure_ldap.php
@@ -56,12 +57,110 @@
 # ldap-utils est maintenant inclus dans l'image Docker personnalisée via le Dockerfile
 # Le mot de passe est maintenant correctement chiffré par le script PHP GLPI
 
+=======
+- name: Vérifier si la configuration LDAP existe déjà
+  community.docker.docker_container_exec:
+    container: glpi_db
+    command: >
+      bash -c "mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+      -sN -e \"SELECT COUNT(*) FROM glpi_authldaps WHERE name='{{ glpi_ldap_name }}';\""
+  register: ldap_exists
+  changed_when: false
+
+- name: Créer le fichier SQL temporaire pour la configuration LDAP (INSERT)
+  ansible.builtin.copy:
+    content: |
+      INSERT INTO glpi_authldaps
+      (name, host, port, basedn, rootdn, login_field, sync_field, `condition`,
+       is_active, use_tls, use_bind, email1_field, realname_field, firstname_field,
+       phone_field, title_field, group_field, group_condition, can_support_pagesize, pagesize)
+      VALUES
+      ('{{ glpi_ldap_name }}', '{{ glpi_ldap_host }}', {{ glpi_ldap_port }},
+       '{{ glpi_ldap_basedn }}', '{{ glpi_ldap_rootdn }}', '{{ glpi_ldap_login_field }}',
+       '{{ glpi_ldap_sync_field }}', '{{ glpi_ldap_condition }}',
+       1, {{ 1 if glpi_ldap_use_tls else 0 }}, {{ 1 if glpi_ldap_use_bind else 0 }},
+       '{{ glpi_ldap_email_field }}', '{{ glpi_ldap_realname_field }}',
+       '{{ glpi_ldap_firstname_field }}', '{{ glpi_ldap_phone_field }}',
+       '{{ glpi_ldap_title_field }}', '{{ glpi_ldap_group_field }}',
+       '{{ glpi_ldap_group_condition }}', 1, 500);
+    dest: /tmp/glpi_ldap_insert.sql
+    mode: '0644'
+  when: ldap_exists.stdout == "0"
+
+- name: Créer le fichier SQL temporaire pour la configuration LDAP (UPDATE)
+  ansible.builtin.copy:
+    content: |
+      UPDATE glpi_authldaps SET
+      host='{{ glpi_ldap_host }}',
+      port={{ glpi_ldap_port }},
+      basedn='{{ glpi_ldap_basedn }}',
+      rootdn='{{ glpi_ldap_rootdn }}',
+      login_field='{{ glpi_ldap_login_field }}',
+      sync_field='{{ glpi_ldap_sync_field }}',
+      `condition`='{{ glpi_ldap_condition }}',
+      is_active=1,
+      use_tls={{ 1 if glpi_ldap_use_tls else 0 }},
+      use_bind={{ 1 if glpi_ldap_use_bind else 0 }},
+      email1_field='{{ glpi_ldap_email_field }}',
+      realname_field='{{ glpi_ldap_realname_field }}',
+      firstname_field='{{ glpi_ldap_firstname_field }}',
+      phone_field='{{ glpi_ldap_phone_field }}',
+      title_field='{{ glpi_ldap_title_field }}',
+      group_field='{{ glpi_ldap_group_field }}',
+      group_condition='{{ glpi_ldap_group_condition }}',
+      can_support_pagesize=1,
+      pagesize=500
+      WHERE name='{{ glpi_ldap_name }}';
+    dest: /tmp/glpi_ldap_update.sql
+    mode: '0644'
+  when: ldap_exists.stdout != "0"
+
+- name: Copier le fichier SQL dans le conteneur (INSERT)
+  ansible.builtin.command: docker cp /tmp/glpi_ldap_insert.sql glpi_db:/tmp/glpi_ldap.sql
+  when: ldap_exists.stdout == "0"
+  changed_when: true
+
+- name: Copier le fichier SQL dans le conteneur (UPDATE)
+  ansible.builtin.command: docker cp /tmp/glpi_ldap_update.sql glpi_db:/tmp/glpi_ldap.sql
+  when: ldap_exists.stdout != "0"
+  changed_when: true
+
+- name: Exécuter le fichier SQL
+  community.docker.docker_container_exec:
+    container: glpi_db
+    command: >
+      bash -c "mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+      < /tmp/glpi_ldap.sql"
+  register: ldap_config
+  changed_when: true
+
+- name: Nettoyer le fichier SQL du conteneur
+  community.docker.docker_container_exec:
+    container: glpi_db
+    command: rm -f /tmp/glpi_ldap.sql
+  changed_when: false
+  failed_when: false
+
+- name: Nettoyer les fichiers SQL temporaires de l'hôte
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/glpi_ldap_insert.sql
+    - /tmp/glpi_ldap_update.sql
+  failed_when: false
+
+>>>>>>> main
 - name: Vérifier la configuration LDAP dans la base de données
   community.docker.docker_container_exec:
     container: glpi_db
     command: >
       bash -c "mariadb -u {{ glpi_mysql_user }} -p{{ glpi_mysql_password }} {{ glpi_mysql_db }}
+<<<<<<< HEAD
       -e \"SELECT id, name, host, port, basedn, login_field, is_active, can_support_pagesize, pagesize FROM glpi_authldaps WHERE name='{{ glpi_ldap_name }}';\""
+=======
+      -e \"SELECT id, name, host, port, basedn, rootdn, login_field, is_active FROM glpi_authldaps WHERE name='{{ glpi_ldap_name }}';\""
+>>>>>>> main
   register: ldap_verify
   changed_when: false
 
@@ -93,13 +192,18 @@
   ansible.builtin.debug:
     msg:
       - "=========================================="
+<<<<<<< HEAD
       - "Configuration LDAP appliquée avec succès"
+=======
+      - "Configuration LDAP créée avec succès"
+>>>>>>> main
       - "Serveur: {{ glpi_ldap_host }}:{{ glpi_ldap_port }}"
       - "Base DN: {{ glpi_ldap_basedn }}"
       - "RootDN: {{ glpi_ldap_rootdn }}"
       - "Login field: {{ glpi_ldap_login_field }}"
       - "Sync field: {{ glpi_ldap_sync_field }}"
       - "TLS: {{ 'Activé' if glpi_ldap_use_tls else 'Désactivé' }}"
+<<<<<<< HEAD
       - "Condition: Exclut comptes désactivés"
       - "=========================================="
       - "⚠️  IMPORTANT: Le test LDAP dans GLPI est TROMPEUR !"
@@ -113,3 +217,14 @@
       - "docker exec glpi ldapsearch -x -LLL -H ldap://{{ glpi_ldap_host }} \\"
       - "  -D '{{ glpi_ldap_rootdn }}' -w '{{ glpi_ldap_password }}' \\"
       - "  -b '{{ glpi_ldap_basedn }}' '(objectClass=user)' samaccountname"
+=======
+      - "Condition: Exclut comptes désactivés, glpi_bind et Administrateur"
+      - "=========================================="
+      - "⚠️  IMPORTANT: Vous devez renseigner le mot de passe LDAP manuellement !"
+      - "Allez dans GLPI > Configuration > Authentification > Annuaire LDAP"
+      - "Cliquez sur '{{ glpi_ldap_name }}'"
+      - "Renseignez le mot de passe dans le champ 'Mot de passe du compte de liaison'"
+      - "Mot de passe à utiliser: {{ glpi_ldap_password }}"
+      - "Puis testez la connexion et importez les utilisateurs"
+      - "=========================================="
+>>>>>>> main

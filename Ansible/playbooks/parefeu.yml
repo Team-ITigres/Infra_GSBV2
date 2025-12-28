@@ -51,7 +51,7 @@
               VLAN source : {{ vlan_source }}
               VLANs de destination : {{ dest_vlans | join(', ') }}
 
-        - name: Attacher la VIF source au ruleset INTERVLAN_POLICY
+        - name: Attacher l'interface source au ruleset INTERVLAN_POLICY
           vyos.vyos.vyos_command:
             commands:
               - configure
@@ -61,7 +61,7 @@
               - exit
           register: vif_source_attachment
 
-        - name: Attacher toutes les VIF de destination au ruleset INTERVLAN_POLICY
+        - name: Attacher toutes les interfaces de destination au ruleset INTERVLAN_POLICY
           vyos.vyos.vyos_command:
             commands:
               - configure
@@ -81,7 +81,7 @@
             port_number: "{{ service_ports[service] | default(service) }}"
             protocol: "{{ 'icmp' if (service_ports[service] | default(service)) == 'icmp' else ('all' if (service_ports[service] | default(service)) == 'all' else 'tcp_udp') }}"
 
-        - name: Construire le nom de l'interface source
+        - name: Construire le nom de l'interface source pour les address-groups
           ansible.builtin.set_fact:
             source_interface: "eth1.{{ vlan_source }}"
 

@@ -2,6 +2,14 @@
 
 set -e
 
+# === VERIFICATION ARGUMENT ===
+if [ "$1" != "full" ]; then
+  apt install figlet -y
+  figlet -f banner "debrouille toi"
+  figlet -f banner "tie pas un tigre"
+  exit 1
+fi
+
 # === CONFIG ===
 CTID=110
 CT_LIST=(110 113 114 115)
@@ -13,7 +21,7 @@ IP_SETUP="$IP/24"
 GW="172.16.0.254"
 BRIDGE="vmbr0"
 SSH_KEY_PATH="/root/.ssh/terransible"
-LXC_TEMPLATE_FILENAME="debian-12-standard_12.7-1_amd64.tar.zst"
+LXC_TEMPLATE_FILENAME="debian-13-standard_13.1-2_amd64.tar.zst"
 LXC_TEMPLATE="/var/lib/vz/template/cache/$LXC_TEMPLATE_FILENAME"
 LXC_TEMPLATE_URL="http://download.proxmox.com/images/system/$LXC_TEMPLATE_FILENAME"
 CHEMIN_TEMPLATE="local:vztmpl/$LXC_TEMPLATE_FILENAME"
@@ -25,6 +33,7 @@ TOKEN_NAME="auto-token"
 USER_ROLE="TerraformProv"
 TOKEN_PASSWORD="Formation13@TF"
 GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
+<<<<<<< HEAD
 
 
 # 0.5 Téléchgement des templates OpnSenses
@@ -58,6 +67,9 @@ GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
  
 # # 3) Marquer en template
 # qm template 2101
+=======
+START_TIME=$(date +%s)
+>>>>>>> main
 
 
 # 1) Télécharger la backup du win srv 2022
@@ -108,8 +120,8 @@ for VM in "${VM_LIST[@]}"; do
 done
 
 # === 1. Télécharger l'ISO LXC ===
-# Lxc Debian 12
-echo "[+] Vérification de l'image Debian 12 LXC..."
+# Lxc Debian 13
+echo "[+] Vérification de l'image Debian 13 LXC..."
 if [ ! -f "$LXC_TEMPLATE" ]; then
   echo "[+] Téléchargement de l'image LXC $LXC_TEMPLATE_FILENAME..."
   wget -O "$LXC_TEMPLATE" "$LXC_TEMPLATE_URL"
@@ -151,28 +163,6 @@ else
   echo "[!] Le bridge vmbr2 existe déjà"
 fi
 
-# Vérifier si le bridge Sync existe déjà
-if ! ip link show Sync &>/dev/null; then
-  echo "[+] Création du bridge Sync..."
-
-  # Vérifier si la configuration existe déjà dans le fichier
-  if ! grep -q "^auto Sync" /etc/network/interfaces; then
-    cat >> /etc/network/interfaces <<'EOF'
-
-auto Sync
-iface Sync inet manual
-        bridge-ports none
-        bridge-stp off
-        bridge-fd 0
-EOF
-    echo "[+] Configuration Sync ajoutée à /etc/network/interfaces"
-  else
-    echo "[!] Configuration Sync déjà présente dans /etc/network/interfaces"
-  fi
-else
-  echo "[!] Le bridge Sync existe déjà"
-fi
-
 # Recharger les interfaces réseau
 echo "[+] Rechargement des interfaces réseau..."
 if command -v ifreload &>/dev/null; then
@@ -180,21 +170,6 @@ if command -v ifreload &>/dev/null; then
 else
   echo "[!] ifreload non disponible, tentative avec ifup..."
   ifup vmbr2 2>/dev/null || true
-  ifup Sync 2>/dev/null || true
-fi
-
-# Vérifier que les bridges ont bien été créés
-if ip link show vmbr2 &>/dev/null; then
-  echo "[✔] Bridge vmbr2 créé avec succès"
-  ip addr show vmbr2
-else
-  echo "[❌] Échec de la création du bridge vmbr2"
-fi
-
-if ip link show Sync &>/dev/null; then
-  echo "[✔] Bridge Sync créé avec succès"
-else
-  echo "[❌] Échec de la création du bridge Sync"
 fi
 
 # === 4. Création du conteneur LXC ===
@@ -217,7 +192,8 @@ pct create $CTID "$LXC_TEMPLATE" \
   -rootfs local-lvm:8 \
   -features nesting=1 \
   -password Formation13@ \
-  -unprivileged 0
+  -unprivileged 0 \
+  -nesting 1
 echo "[+] Démarrage du conteneur..."
 pct start $CTID
 
@@ -273,11 +249,6 @@ fi
 export TF_TOKEN_ID="$TOKEN_USER!$TOKEN_NAME"
 export TF_TOKEN_SECRET=$(echo "$TOKEN_OUTPUT" | jq -r '.value')
 
-echo ""
-echo "Token créé avec succès :"
-echo "TF_TOKEN_ID     = $TF_TOKEN_ID"
-echo "TF_TOKEN_SECRET = $TF_TOKEN_SECRET"
-
 # === 8. Connexion au conteneur pour setup ===
 echo "[+] Connexion au conteneur pour déploiement Terraform + Ansible..."
 rm -f ~/.ssh/known_hosts
@@ -295,7 +266,7 @@ ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" <<EOF
 #!/bin/bash
 set -e
 
-DISTRO="bookworm"
+DISTRO="trixie"
 GITHUB_REPO="$GITHUB_REPO"
 node="$node"
 
@@ -303,7 +274,7 @@ echo "🔧 Mise à jour des paquets..."
 apt update && apt upgrade -y
 
 echo "📦 Installation des outils de base..."
-apt install -y sudo curl wget gnupg lsb-release software-properties-common unzip python3 python3-pip python3-venv git locales
+apt install -y sudo curl wget gnupg lsb-release unzip python3 python3-pip python3-venv git locales
 
 echo "🌍 Correction des locales pour éviter les erreurs de type 'setlocale'..."
 sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
@@ -329,7 +300,7 @@ if ! grep -q "venvs/ansible" ~/.bashrc; then
 fi
 
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com bookworm main" > /etc/apt/sources.list.d/hashicorp.list
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com trixie main" > /etc/apt/sources.list.d/hashicorp.list
 apt update
 apt install -y terraform
 
@@ -361,76 +332,14 @@ echo "[+] Attente que les machines 172.16.0.2 et 172.16.0.1 soient en ligne..."
 while ! ping -c 1 -W 1 172.16.0.2 > /dev/null 2>&1; do sleep 1; done
 while ! ping -c 1 -W 1 172.16.0.1 > /dev/null 2>&1; do sleep 1; done
 
-EOF
-
-# === 9. Configuration Docker pour les conteneurs LXC ===
-echo "[+] Configuration Docker pour les conteneurs LXC..."
-
-# Liste des conteneurs LXC qui nécessitent Docker
-DOCKER_LXC_LIST=(113 114 115)
-
-for CT in "${DOCKER_LXC_LIST[@]}"; do
-  if pct status "$CT" &>/dev/null; then
-    echo "[+] Configuration de Docker pour le conteneur LXC $CT..."
-
-    # Arrêt du conteneur pour modifier la configuration
-    pct stop "$CT" 2>/dev/null || true
-
-    # Ajout des configurations Docker dans le fichier de conf du LXC
-    LXC_CONF="/etc/pve/lxc/${CT}.conf"
-
-    # Vérification si la configuration n'est pas déjà présente
-    if ! grep -q "lxc.apparmor.profile=unconfined" "$LXC_CONF"; then
-      echo "lxc.apparmor.profile=unconfined" >> "$LXC_CONF"
-      echo "lxc.cap.drop=" >> "$LXC_CONF"
-      echo "lxc.cgroup2.devices.allow=a" >> "$LXC_CONF"
-      echo "lxc.mount.auto=proc:rw sys:rw" >> "$LXC_CONF"
-      echo "features: nesting=1,keyctl=1" >> "$LXC_CONF"
-      echo "[✔] Configuration Docker ajoutée pour le conteneur $CT"
-    else
-      echo "[!] Configuration Docker déjà présente pour le conteneur $CT"
-    fi
-
-    # Redémarrage du conteneur
-    pct start "$CT"
-    echo "[✔] Conteneur $CT redémarré avec la configuration Docker"
-  else
-    echo "[!] Conteneur $CT non trouvé, configuration ignorée"
-  fi
-done
-
-# === 9b. Attente de la connectivité réseau des conteneurs ===
-echo "[+] Attente de la connectivité réseau des conteneurs LXC..."
-# Attendre un peu que les conteneurs démarrent
-sleep 5
-
-for CT in "${DOCKER_LXC_LIST[@]}"; do
-  if pct status "$CT" 2>/dev/null | grep -q "running"; then
-    echo "[+] Test de connectivité réseau pour le conteneur $CT..."
-    # Attendre que le conteneur puisse résoudre DNS et accéder à Internet
-    until pct exec "$CT" -- ping -c 1 -W 2 8.8.8.8 &>/dev/null; do
-      echo "  ⏳ En attente de la connectivité réseau du conteneur $CT..."
-      sleep 2
-    done
-    echo "[✔] Conteneur $CT a une connectivité réseau fonctionnelle"
-  fi
-done
-
-# === 10. Retour dans le conteneur terransible pour Ansible ===
-echo "[+] Connexion au conteneur terransible pour déploiement Ansible..."
-
-ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" <<EOF
-
-#!/bin/bash
-set -e
-
-echo "[+] Activation du venv Ansible..."
-source ~/venvs/ansible/bin/activate
-
 cd /Infra_GSBV2/Ansible
-ansible-galaxy install -r requirements.yml
+ansible-galaxy install -r requirements.yml --force
 ansible-playbook Install_InfraGSB.yml
 
 EOF
 
 echo "✅ Déploiement complet terminé avec succès."
+
+DURATION=$(($(date +%s) - START_TIME))
+
+echo "Temps d'exécution: ${DURATION} secondes"

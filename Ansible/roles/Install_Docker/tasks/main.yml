@@ -8,15 +8,22 @@
     state: present
     update_cache: yes
 
-- name: Ajouter la clé GPG officielle de Docker
-  ansible.builtin.apt_key:
+- name: Créer le répertoire pour les clés APT
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Télécharger la clé GPG officielle de Docker
+  ansible.builtin.get_url:
     url: https://download.docker.com/linux/debian/gpg
-    state: present
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
     validate_certs: false
 
 - name: Ajouter le repository Docker
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian trixie stable"
     state: present
     validate_certs: false
 

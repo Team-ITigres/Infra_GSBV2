@@ -93,12 +93,12 @@
       block:
         - name: Demander le VLAN source
           ansible.builtin.pause:
-            prompt: "VLAN source pour la règle de pare-feu (ex: 62)"
+            prompt: "VLAN source ou interface source (ex: 62 pour eth1.62, ou eth4/local pour interface complète)"
           register: fw_vlan_source
 
         - name: Demander le VLAN destination
           ansible.builtin.pause:
-            prompt: "VLAN(s) destination pour la règle de pare-feu (ex: 300 ou 300,400 pour plusieurs)"
+            prompt: "VLAN(s) ou interface(s) destination (ex: 300, 300,400 pour plusieurs, ou eth4/local pour interface complète)"
           register: fw_vlan_dest
 
         - name: Demander le service

@@ -1,0 +1,28 @@
+name: Deploy Script to WebServer
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Script_Deploy.sh'
+
+jobs:
+  deploy-script:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ${{ runner.temp }}/.ssh
+          echo "${{ secrets.M2SHELPER_CLE }}" > ${{ runner.temp }}/.ssh/deploy_key
+          chmod 600 ${{ runner.temp }}/.ssh/deploy_key
+
+      - name: Deploy script via SCP
+        run: |
+          scp -i ${{ runner.temp }}/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            Script_Deploy.sh \
+            root@${{ secrets.M2SHELPER_IP }}:/var/www/html/scripts/deploy-infra-gsb.sh
