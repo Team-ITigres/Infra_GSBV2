@@ -1,0 +1,91 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for SFTP
+
+- name: Installer le serveur OpenSSH
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+    update_cache: yes
+
+- name: Créer le groupe SFTP
+  ansible.builtin.group:
+    name: "{{ sftp_group }}"
+    state: present
+
+- name: Créer le répertoire racine SFTP
+  ansible.builtin.file:
+    path: "{{ sftp_root_directory }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Créer les utilisateurs SFTP
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    group: "{{ sftp_group }}"
+    home: "{{ sftp_root_directory }}/{{ item.home_dir }}"
+    shell: /usr/sbin/nologin
+    create_home: no
+    state: present
+  loop: "{{ sftp_users }}"
+  when: sftp_users | length > 0
+
+- name: Définir les mots de passe des utilisateurs SFTP
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    update_password: on_create
+  loop: "{{ sftp_users }}"
+  when: sftp_users | length > 0
+  no_log: true
+
+- name: Créer les répertoires home des utilisateurs
+  ansible.builtin.file:
+    path: "{{ sftp_root_directory }}/{{ item.home_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ sftp_home_permissions }}"
+  loop: "{{ sftp_users }}"
+  when: sftp_users | length > 0
+
+- name: Créer les répertoires upload pour chaque utilisateur
+  ansible.builtin.file:
+    path: "{{ sftp_root_directory }}/{{ item.home_dir }}/upload"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ sftp_group }}"
+    mode: "{{ sftp_upload_permissions }}"
+  loop: "{{ sftp_users }}"
+  when: sftp_users | length > 0
+
+- name: Déployer la configuration SSH/SFTP
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0644'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: Redémarrer SSH
+
+- name: S'assurer que le service SSH est démarré et activé
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: yes
+
+- name: Afficher les informations de connexion
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "Serveur SFTP configuré avec succès !"
+      - "Adresse: {{ ansible_host }}:{{ sftp_port }}"
+      - "Utilisateurs créés: {{ sftp_users | map(attribute='username') | list | join(', ') }}"
+      - "Répertoire racine: {{ sftp_root_directory }}"
+      - "=========================================="
+      - "Les utilisateurs sont isolés dans leur répertoire (chroot jail)"
+      - "Répertoire d'upload: ~/upload/"
+  when: sftp_users | length > 0

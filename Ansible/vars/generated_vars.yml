@@ -18,9 +18,9 @@ dhcp_dns: "172.16.0.3"
 
 firewall_rule: "oui"
 vlan_source: "eth3"
-vlan_dest: "300"
-service: "icmp"
-description: "Blocage ICMP depuis eth3 vers VLAN 300"
+vlan_dest: "99,300,301"
+service: "all"
+description: "Blocage all depuis eth3 vers VLAN 300"
 
 nat_rule: "oui"
 nat_description: "HTTPS VLAN Marketing vers GLPI"

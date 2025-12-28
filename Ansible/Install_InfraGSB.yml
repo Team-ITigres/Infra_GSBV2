@@ -24,6 +24,20 @@
     - roles/Install_Docker
     - roles/GLPI
 
+- name : Install SFTP Server
+  become: yes
+  hosts: SFTP
+  vars:
+    sftp_users:
+      - username: user1
+        password: "Formation13@"
+        home_dir: user1
+      - username: user2
+        password: "Formation13@"
+        home_dir: user2
+  roles:
+    - roles/SFTP
+
 - name : Promouvoir l'AD
   hosts: WinSRV01
   roles:

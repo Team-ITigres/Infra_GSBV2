@@ -1,0 +1,30 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for SFTP
+
+# Port SSH/SFTP
+sftp_port: 22
+
+# Répertoire racine pour les utilisateurs SFTP
+sftp_root_directory: /srv/sftp
+
+# Groupe des utilisateurs SFTP
+sftp_group: sftpusers
+
+# Liste des utilisateurs SFTP à créer
+# Exemple:
+# sftp_users:
+#   - username: user1
+#     password: "MotDePasse123"
+#     home_dir: user1
+#   - username: user2
+#     password: "AutrePassword456"
+#     home_dir: user2
+sftp_users: []
+
+# Permissions des répertoires home
+sftp_home_permissions: "0755"
+sftp_upload_permissions: "0755"
+
+# Activer la journalisation SFTP
+sftp_log_level: INFO

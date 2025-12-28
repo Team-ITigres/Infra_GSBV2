@@ -1,0 +1,35 @@
+# Configuration SSH/SFTP sécurisée
+# Géré par Ansible - Ne pas modifier manuellement
+
+# Port SSH
+Port {{ sftp_port }}
+
+# Protocole et sécurité
+Protocol 2
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+
+# Logging
+SyslogFacility AUTH
+LogLevel {{ sftp_log_level }}
+
+# Authentification
+LoginGraceTime 2m
+MaxAuthTries 6
+MaxSessions 10
+
+# Subsystem SFTP
+Subsystem sftp internal-sftp
+
+# Configuration spécifique pour le groupe SFTP
+# Les utilisateurs du groupe {{ sftp_group }} sont isolés dans leur répertoire (chroot jail)
+Match Group {{ sftp_group }}
+    ChrootDirectory {{ sftp_root_directory }}/%u
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    X11Forwarding no
+    PermitTunnel no
+    AuthorizedKeysFile none
