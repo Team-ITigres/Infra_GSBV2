@@ -2,13 +2,13 @@
 
 set -e
 
-# # === VERIFICATION ARGUMENT ===
-# if [ "$1" != "full" ]; then
-#   apt install figlet -y
-#   figlet -f banner "debrouille toi"
-#   figlet -f banner "tie pas un tigre"
-#   exit 1
-# fi
+# === VERIFICATION ARGUMENT ===
+if [ "$1" != "full" ]; then
+  apt install figlet -y
+  figlet -f banner "debrouille toi"
+  figlet -f banner "tie pas un tigre"
+  exit 1
+fi
 
 # === CONFIG ===
 CTID=110
@@ -46,20 +46,20 @@ else
   echo "[!] Backup déjà présente"
 fi
  
-# if qm status 2000 &>/dev/null; then
-#     qm destroy 2000 --purge
-# fi
+if qm status 2000 &>/dev/null; then
+    qm destroy 2000 --purge
+fi
 
-# if pct status 2000 &>/dev/null; then
-#     pct destroy 2000
-# fi
+if pct status 2000 &>/dev/null; then
+    pct destroy 2000
+fi
  
-# # 2) Restaurer sur le stockage voulu (ex: local-lvm) et VMID fixe (ex: 2000)
-# qmrestore /var/lib/vz/dump/NOM_WINSRV_Backup  2000 --storage local-lvm --unique 1
-# qm set 2000 --name "WinTemplate"
+# 2) Restaurer sur le stockage voulu (ex: local-lvm) et VMID fixe (ex: 2000)
+qmrestore /var/lib/vz/dump/NOM_WINSRV_Backup  2000 --storage local-lvm --unique 1
+qm set 2000 --name "WinTemplate"
  
-# # 3) Marquer en template
-# qm template 2000
+# 3) Marquer en template
+qm template 2000
 
 # === 0. Prérequis ===
 echo "[+] Vérification/installation de jq..."
