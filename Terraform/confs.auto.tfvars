@@ -31,6 +31,17 @@ lxc_linux = {
     disk_size = 20
     network_bridge = "vmbr0"
     }
+
+    "Posteio" = {
+    lxc_id = 116
+    name = "Posteio"
+    cores = 2
+    memory = 2048
+    ipconfig0 = "172.16.0.6/24"
+    gw = "172.16.0.254"
+    disk_size = 20
+    network_bridge = "vmbr0"
+    }
 }
 
 win_srv = {
