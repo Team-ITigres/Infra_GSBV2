@@ -32,9 +32,9 @@ lxc_linux = {
     network_bridge = "vmbr0"
     }
 
-    "Posteio" = {
+    "Dockermail" = {
     lxc_id = 116
-    name = "Posteio"
+    name = "Dockermail"
     cores = 2
     memory = 2048
     ipconfig0 = "172.16.0.6/24"

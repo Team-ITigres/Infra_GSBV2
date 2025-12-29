@@ -4,6 +4,12 @@
   roles: 
     - roles/MAJ  
 
+- name: Install Docker
+  become: yes
+  hosts: linuxs
+  roles:
+    - roles/Install_Docker
+
 - name : Install AdGuard
   become: yes
   hosts: Adguard
@@ -14,14 +20,12 @@
   become: yes
   hosts: Uptime_Kuma
   roles:
-    - roles/Install_Docker
     - roles/Uptime_Kuma
 
 - name : Install GLPI
   become: yes
   hosts: GLPI
   roles:
-    - roles/Install_Docker
     - roles/GLPI
 
 - name : Promouvoir l'AD
