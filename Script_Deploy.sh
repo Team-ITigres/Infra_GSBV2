@@ -2,18 +2,18 @@
 
 set -e
 
-# === VERIFICATION ARGUMENT ===
-if [ "$1" != "full" ]; then
-  apt install figlet -y
-  figlet -f banner "debrouille toi"
-  figlet -f banner "tie pas un tigre"
-  exit 1
-fi
+# # === VERIFICATION ARGUMENT ===
+# if [ "$1" != "full" ]; then
+#   apt install figlet -y
+#   figlet -f banner "debrouille toi"
+#   figlet -f banner "tie pas un tigre"
+#   exit 1
+# fi
 
 # === CONFIG ===
 CTID=110
 CT_LIST=(110 113 114 115)
-VM_LIST=(201 202 301 302)
+VM_LIST=(201 202)
 CTNAME="terransible"
 HOSTNAME="terransible"
 IP="172.16.0.15"
@@ -33,67 +33,33 @@ TOKEN_NAME="auto-token"
 USER_ROLE="TerraformProv"
 TOKEN_PASSWORD="Formation13@TF"
 GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
-<<<<<<< HEAD
-
-
-# 0.5 Téléchgement des templates OpnSenses
-
-# if [ ! -f /var/lib/vz/dump/opnsense-master.vma.zst ]; then
-#   wget --no-check-certificate -O /var/lib/vz/dump/opnsense-master.vma.zst https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/opnsense-master.vma.zst
-# fi
-
-# if [ ! -f /var/lib/vz/dump/opnsense-backup.vma.zst ]; then
-#   wget --no-check-certificate -O /var/lib/vz/dump/opnsense-backup.vma.zst https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/opnsense-backup.vma.zst
-# fi
-
-# if qm status 2100 &>/dev/null; then
-#     qm destroy 2100 --purge
-# fi
-
-# if qm status 2101 &>/dev/null; then
-#     qm destroy 2101 --purge
-# fi
-
-# # 2) Restaurer les OpnSenses
-# qmrestore /var/lib/vz/dump/opnsense-master.vma.zst  2100 --storage local-lvm --unique 1
-# qm set 2100 --name "OpnSense-Master-Template"
-
-# # 3) Marquer en template
-# qm template 2100
-
-# # 2) Restaurer les OpnSenses
-# qmrestore /var/lib/vz/dump/opnsense-backup.vma.zst  2101 --storage local-lvm --unique 1
-# qm set 2101 --name "OpnSense-Backup-Template"
- 
-# # 3) Marquer en template
-# qm template 2101
-=======
 START_TIME=$(date +%s)
->>>>>>> main
-
+TAG_ADMINBOX="0"
+NOM_WINSRV_Backup="vzdump-qemu-101-2025_09_13-14_41_02.vma.zst"
 
 # 1) Télécharger la backup du win srv 2022
-if [ ! -f /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst ]; then
-  wget --no-check-certificate -O /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst
-fi
-if [ ! -f /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst.notes ]; then
-  wget --no-check-certificate -O /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst.notes https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst.notes
+echo "[+] Vérification de la backup Windows Server 2022..."
+if [ ! -f /var/lib/vz/dump/$NOM_WINSRV_Backup ]; then
+  echo "[+] Téléchargement de la backup Windows Server 2022..."
+  wget --no-check-certificate -O /var/lib/vz/dump/$NOM_WINSRV_Backup https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/$NOM_WINSRV_Backup
+else
+  echo "[!] Backup déjà présente"
 fi
  
-if qm status 2000 &>/dev/null; then
-    qm destroy 2000 --purge
-fi
+# if qm status 2000 &>/dev/null; then
+#     qm destroy 2000 --purge
+# fi
 
-if pct status 2000 &>/dev/null; then
-    pct destroy 2000
-fi
+# if pct status 2000 &>/dev/null; then
+#     pct destroy 2000
+# fi
  
-# 2) Restaurer sur le stockage voulu (ex: local-lvm) et VMID fixe (ex: 2000)
-qmrestore /var/lib/vz/dump/vzdump-qemu-101-2025_09_13-14_41_02.vma.zst  2000 --storage local-lvm --unique 1
-qm set 2000 --name "WinTemplate"
+# # 2) Restaurer sur le stockage voulu (ex: local-lvm) et VMID fixe (ex: 2000)
+# qmrestore /var/lib/vz/dump/NOM_WINSRV_Backup  2000 --storage local-lvm --unique 1
+# qm set 2000 --name "WinTemplate"
  
-# 3) Marquer en template
-qm template 2000
+# # 3) Marquer en template
+# qm template 2000
 
 # === 0. Prérequis ===
 echo "[+] Vérification/installation de jq..."
@@ -130,9 +96,13 @@ fi
 # === 2. Génération de la paire de clés SSH ===
 echo "[+] Génération de la paire de clés SSH pour le conteneur..."
 if [ ! -f "$SSH_KEY_PATH" ]; then
+  echo "[+] Création de la paire de clés SSH..."
   ssh-keygen -t rsa -b 4096 -f "$SSH_KEY_PATH" -N ""
+else
+  echo "[!] Clé SSH déjà existante"
 fi
 
+echo "[+] Lecture de la clé publique..."
 PUB_KEY=$(cat "${SSH_KEY_PATH}.pub")
 
 # === 3. Création des bridges réseau ===
@@ -182,18 +152,19 @@ fi
 echo "[+] Création du conteneur LXC '$CTNAME' avec IP $IP_SETUP..."
 pct destroy $CTID 2>/dev/null || true
 
-pct create $CTID "$LXC_TEMPLATE" \
-  -hostname $HOSTNAME \
-  -cores 4 \
-  -memory 4096 \
-  -net0 name=eth0,bridge=$BRIDGE,ip=$IP_SETUP,gw=$GW \
-  -net1 name=eth1,bridge=vmbr2,ip=10.10.0.10/28,gw=10.10.0.1 \
-  -storage local-lvm \
-  -rootfs local-lvm:8 \
-  -features nesting=1 \
-  -password Formation13@ \
-  -unprivileged 0 \
-  -nesting 1
+echo "[+] Exécution de la commande pct create..."
+pct create $CTID "$CHEMIN_TEMPLATE" \
+  --hostname $HOSTNAME \
+  --cores 4 \
+  --memory 4096 \
+  --net0 name=eth0,bridge=$BRIDGE,ip=$IP_SETUP,gw=$GW \
+  --net1 name=eth1,bridge=vmbr2,ip=10.10.0.10/28,gw=10.10.0.1 \
+  --storage local-lvm \
+  --rootfs local-lvm:8 \
+  --features nesting=1 \
+  --password Formation13@ \
+  --unprivileged 0
+
 echo "[+] Démarrage du conteneur..."
 pct start $CTID
 
@@ -249,8 +220,11 @@ fi
 export TF_TOKEN_ID="$TOKEN_USER!$TOKEN_NAME"
 export TF_TOKEN_SECRET=$(echo "$TOKEN_OUTPUT" | jq -r '.value')
 
+echo "[+] Token créé avec succès: $TF_TOKEN_ID"
+
 # === 8. Connexion au conteneur pour setup ===
 echo "[+] Connexion au conteneur pour déploiement Terraform + Ansible..."
+echo "[+] Nettoyage du fichier known_hosts..."
 rm -f ~/.ssh/known_hosts
 
 IP_ADDR="${IP%%/*}"
@@ -261,6 +235,7 @@ until ping -c1 -W1 "$IP_ADDR" >/dev/null 2>&1; do
   sleep 2
 done
 
+echo "[+] Conteneur en ligne, connexion SSH en cours..."
 ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" <<EOF
 
 #!/bin/bash
@@ -270,71 +245,86 @@ DISTRO="trixie"
 GITHUB_REPO="$GITHUB_REPO"
 node="$node"
 
-echo "🔧 Mise à jour des paquets..."
-apt update && apt upgrade -y
-
-echo "📦 Installation des outils de base..."
-apt install -y sudo curl wget gnupg lsb-release unzip python3 python3-pip python3-venv git locales
-
-echo "🌍 Correction des locales pour éviter les erreurs de type 'setlocale'..."
-sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
-locale-gen
-update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
-
-echo "🐍 Création d’un venv global pour Ansible (Linux + Windows)..."
-mkdir -p ~/venvs
-python3 -m venv ~/venvs/ansible
-
-echo "📦 Activation du venv et installation des dépendances Ansible + WinRM..."
-source ~/venvs/ansible/bin/activate
-pip install --upgrade pip
-pip install ansible "pywinrm[credssp]" requests-ntlm paramiko
-
-echo "🔗 Ajout d’un alias global dans ~/.bashrc pour ansible et ansible-playbook"
-if ! grep -q "venvs/ansible" ~/.bashrc; then
-  echo 'ansible() { source ~/venvs/ansible/bin/activate && command ansible "\$@"; }' >> ~/.bashrc
-  echo 'ansible-playbook() { source ~/venvs/ansible/bin/activate && command ansible-playbook "\$@"; }' >> ~/.bashrc
-  echo 'ansible-galaxy() { source ~/venvs/ansible/bin/activate && command ansible-galaxy "\$@"; }' >> ~/.bashrc
-fi
-
-wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com trixie main" > /etc/apt/sources.list.d/hashicorp.list
+echo "[+] Mise à jour des paquets..."
 apt update
-apt install -y terraform
 
-echo "[✔] Vérification de l'installation de Terraform..."
-command -v terraform >/dev/null || { echo "❌ Terraform n’est pas installé correctement"; exit 1; }
+echo "[+] Installation des dépendances pour Docker..."
+apt install -y ca-certificates curl gnupg
 
-echo "✅ VM terransible prête : Ansible, Terraform, Locales, Git et Alias configurés."
+echo "[+] Ajout de la clé GPG Docker..."
+curl -fsSL https://download.docker.com/linux/debian/gpg \
+  | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo "[+] Ajout du dépôt Docker..."
+echo \
+"deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/debian \
+\$(. /etc/os-release && echo \"\$VERSION_CODENAME\") stable" \
+| tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+echo "[+] Mise à jour avec le nouveau dépôt Docker..."
+apt update
+
+echo "[+] Installation de Docker et ses composants..."
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 echo "[+] Clonage du dépôt Git..."
 git clone "\$GITHUB_REPO" /Infra_GSBV2 || { echo "❌ Clone Git échoué"; exit 1; }
 
-echo "[+] Écriture du fichier secrets.auto.tfvars..."
-cat <<EOT > /Infra_GSBV2/Terraform/secrets.auto.tfvars
-proxmox_api_url         = "$PM_API"
-proxmox_api_token_id    = "$TOKEN_USER!$TOKEN_NAME"
-proxmox_api_token       = "$TF_TOKEN_SECRET"
-target_node             = "$node"
-chemin_cttemplate       = "$CHEMIN_TEMPLATE"
+echo "[+] Écriture du fichier .env pour Terraform..."
+cat <<EOT > /root/.env_tf
+TF_VAR_proxmox_api_url=$PM_API
+TF_VAR_proxmox_api_token_id=$TOKEN_USER!$TOKEN_NAME
+TF_VAR_proxmox_api_token=$TF_TOKEN_SECRET
+TF_VAR_target_node=$node
+TF_VAR_chemin_cttemplate=$CHEMIN_TEMPLATE
 EOT
 
-echo "[+] Création du dossier pour les clés SSH Ansible..."
-mkdir -p ~/etc/ansible/keys
+echo "[+] Téléchargement de l'image adminbox:0..."
+docker pull ghcr.io/leq-letigre/adminbox:0
 
+echo "[+] Création de la fonction terransible avec tag $TAG_ADMINBOX..."
+cat >> /root/.bashrc <<FUNCEOF
+terransible() {
+  if [ \\\$# -eq 0 ]; then
+    docker run --rm -it --network="host" -v /root/etc/ansible:/root/etc/ansible -v "\\\$PWD":/work --env-file /root/.env_tf ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
+  else
+    docker run --rm --network="host" -v /root/etc/ansible:/root/etc/ansible -v "\\\$PWD":/work --env-file /root/.env_tf ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX "\\\$@"
+  fi
+}
+FUNCEOF
+
+echo "[+] Chargement de la fonction terransible..."
+source /root/.bashrc
+
+echo "[+] Initialisation de Terraform..."
 cd /Infra_GSBV2/Terraform
-terraform init
-terraform apply -auto-approve
+terransible terraform init
+
+echo "[+] Application de la configuration Terraform..."
+terransible terraform apply -auto-approve
 
 echo "[+] Attente que les machines 172.16.0.2 et 172.16.0.1 soient en ligne..."
-while ! ping -c 1 -W 1 172.16.0.2 > /dev/null 2>&1; do sleep 1; done
-while ! ping -c 1 -W 1 172.16.0.1 > /dev/null 2>&1; do sleep 1; done
+while ! ping -c 1 -W 1 172.16.0.2 > /dev/null 2>&1; do
+  echo "⏳ En attente de 172.16.0.2..."
+  sleep 1
+done
+echo "[+] Machine 172.16.0.2 en ligne"
 
+while ! ping -c 1 -W 1 172.16.0.1 > /dev/null 2>&1; do
+  echo "⏳ En attente de 172.16.0.1..."
+  sleep 1
+done
+echo "[+] Machine 172.16.0.1 en ligne"
+
+echo "[+] Installation des rôles Ansible..."
 cd /Infra_GSBV2/Ansible
-ansible-galaxy install -r requirements.yml --force
-ansible-playbook Install_InfraGSB.yml
+terransible ansible-galaxy install -r requirements.yml --force
+
+echo "[+] Exécution du playbook Ansible..."
+terransible ansible-playbook Install_InfraGSB.yml
 
 EOF
 
