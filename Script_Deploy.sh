@@ -55,7 +55,7 @@ if pct status 2000 &>/dev/null; then
 fi
  
 # 2) Restaurer sur le stockage voulu (ex: local-lvm) et VMID fixe (ex: 2000)
-qmrestore /var/lib/vz/dump/NOM_WINSRV_Backup  2000 --storage local-lvm --unique 1
+qmrestore /var/lib/vz/dump/$NOM_WINSRV_Backup  2000 --storage local-lvm --unique 1
 qm set 2000 --name "WinTemplate"
  
 # 3) Marquer en template
