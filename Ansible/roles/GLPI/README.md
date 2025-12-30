@@ -1,315 +1,425 @@
 # Rôle Ansible GLPI
 
-Déploiement automatisé de GLPI (Gestion Libre de Parc Informatique) avec Docker et configuration automatique.
+Déploiement automatisé de GLPI (Gestion Libre de Parc Informatique) avec Docker, MariaDB et restauration automatique depuis dump SQL.
 
 ## Caractéristiques
 
-- ✅ Déploiement GLPI 11.0.2 (dernière version stable)
-- ✅ Base de données MariaDB 11.0
-- ✅ Installation automatique via CLI (pas de setup manuel)
-- ✅ Configuration LDAP/Active Directory automatique
-- ✅ Volumes Docker persistants
-- ✅ Cron configuré pour les tâches automatiques
-- ✅ Scripts de sauvegarde/restauration inclus
-- ✅ Support Ansible Vault pour les secrets
+- ✅ Déploiement GLPI 11.0.4 via Docker Compose
+- ✅ Base de données MariaDB 10.7
+- ✅ Restauration automatique depuis dump SQL (docker-entrypoint-initdb.d)
+- ✅ Détection intelligente des changements de dump
+- ✅ Réinitialisation automatique de la base si le dump change
+- ✅ Isolation réseau MariaDB (sécurité renforcée)
+- ✅ Volumes Docker persistants pour config, files et marketplace
+- ✅ Script de backup intégré avec l'inventaire Ansible
+- ✅ Healthcheck MariaDB pour assurer la disponibilité
 
 ## Prérequis
 
 - Docker et Docker Compose installés sur la machine cible
 - Collection Ansible `community.docker` installée
-- Accès réseau au serveur LDAP (si configuration LDAP activée)
+- Rôle `Install_Docker` appliqué (ou Docker déjà installé)
 
 ## Structure du rôle
 
 ```
 GLPI/
 ├── defaults/main.yml          # Variables par défaut
-├── handlers/main.yml          # Handlers de redémarrage
-├── tasks/
-│   ├── main.yml              # Tâches principales
-│   └── configure_ldap.yml    # Configuration LDAP
+├── tasks/main.yml             # Tâches principales de déploiement
 ├── templates/
-│   └── docker-compose.yml.j2 # Template Docker Compose
+│   └── docker-compose.yml.j2  # Template Docker Compose
 ├── files/
-│   ├── backup_glpi.sh        # Script de sauvegarde
-│   └── restore_glpi.sh       # Script de restauration
-└── README.md                 # Ce fichier
+│   ├── backup_glpi.sh         # Script de sauvegarde (exécuté depuis Ansible controller)
+│   └── docker-entrypoint-initdb.d/
+│       └── *.sql              # Dumps SQL pour initialisation auto
+└── README.md                  # Ce fichier
 ```
 
 ## Variables
+
+### Configuration MariaDB
+
+| Variable | Défaut | Description |
+|----------|--------|-------------|
+| `mariadb_version` | `10.7` | Version de MariaDB |
+| `mariadb_root_password` | `StrongRootPassw0rd!` | Mot de passe root MariaDB |
+| `mariadb_database` | `glpi` | Nom de la base de données |
+| `mariadb_user` | `glpi_user` | Utilisateur MariaDB pour GLPI |
+| `mariadb_password` | `GlpiUserPassw0rd!` | Mot de passe utilisateur MariaDB |
+| `mariadb_container_name` | `mariadb` | Nom du conteneur MariaDB |
 
 ### Configuration GLPI
 
 | Variable | Défaut | Description |
 |----------|--------|-------------|
-| `glpi_version` | `11.0.2` | Version de GLPI |
-| `glpi_port` | `8080` | Port d'écoute HTTP |
-| `glpi_timezone` | `Europe/Paris` | Fuseau horaire |
-| `mariadb_version` | `11.0` | Version MariaDB |
+| `glpi_version` | `11.0.4` | Version de GLPI |
+| `glpi_container_name` | `glpi` | Nom du conteneur GLPI |
+| `glpi_db_host` | `mariadb` | Hôte de la base de données |
+| `glpi_db_name` | `glpi` | Nom de la base GLPI |
+| `glpi_db_user` | `glpi_user` | Utilisateur GLPI pour la DB |
+| `glpi_db_password` | `GlpiUserPassw0rd!` | Mot de passe DB GLPI |
 
-### Base de données
+**⚠️ IMPORTANT:** Changez tous les mots de passe par défaut et utilisez Ansible Vault pour les sécuriser !
 
-| Variable | Défaut | Description |
-|----------|--------|-------------|
-| `glpi_mysql_db` | `glpi` | Nom de la base de données |
-| `glpi_mysql_user` | `glpi` | Utilisateur MySQL |
-| `glpi_mysql_password` | `ChangeMe_GlpiPassword` | Mot de passe MySQL (utiliser Vault) |
-| `glpi_mysql_root_password` | `ChangeMe_RootPassword` | Mot de passe root MySQL (utiliser Vault) |
+## Architecture
 
-### Compte administrateur GLPI
+### Réseau Docker
 
-| Variable | Défaut | Description |
-|----------|--------|-------------|
-| `glpi_admin_user` | `glpi` | Utilisateur admin par défaut |
-| `glpi_admin_password` | `glpi` | Mot de passe admin (utiliser Vault) |
+Le rôle crée deux réseaux Docker pour une sécurité optimale :
 
-### Configuration LDAP (optionnel)
+- **glpi-internal** : Réseau isolé (`internal: true`) pour la communication GLPI ↔ MariaDB
+- **glpi-external** : Réseau externe pour l'accès HTTP à GLPI
 
-| Variable | Défaut | Description |
-|----------|--------|-------------|
-| `glpi_ldap_enabled` | `false` | Activer la configuration LDAP |
-| `glpi_ldap_name` | `Active Directory GSB` | Nom du serveur LDAP |
-| `glpi_ldap_host` | `ad.gsb.local` | Hôte LDAP |
-| `glpi_ldap_port` | `636` | Port LDAP (636 pour LDAPS) |
-| `glpi_ldap_basedn` | `DC=gsb,DC=local` | Base DN |
-| `glpi_ldap_rootdn` | `CN=glpi_bind,...` | DN de compte de liaison |
-| `glpi_ldap_password` | - | Mot de passe du compte de liaison |
-| `glpi_ldap_use_tls` | `true` | Utiliser TLS/SSL |
-| `glpi_ldap_login_field` | `samaccountname` | Champ de connexion |
+MariaDB est **complètement isolé** et n'est accessible que par GLPI.
+
+### Volumes Docker persistants
+
+| Volume | Montage | Contenu |
+|--------|---------|---------|
+| `mariadb-data` | `/var/lib/mysql` | Base de données MariaDB |
+| `glpi-files` | `/var/glpi/files` | Documents et fichiers uploadés |
+| `glpi-config` | `/var/glpi/config` | Configuration GLPI |
+| `glpi-marketplace` | `/var/glpi/marketplace` | Plugins installés |
+
+### Restauration automatique du dump SQL
+
+Le rôle utilise le mécanisme `docker-entrypoint-initdb.d` de MariaDB :
+
+1. Les fichiers `*.sql` dans `files/docker-entrypoint-initdb.d/` sont copiés vers `/srv/glpi/dump/` sur le LXC
+2. Le dossier `dump/` est monté en lecture seule dans MariaDB : `/docker-entrypoint-initdb.d`
+3. Au premier démarrage (volume vide), MariaDB importe automatiquement tous les `.sql`
+
+**Détection intelligente des changements :**
+- Ansible compare les checksums des fichiers SQL
+- Si un dump change, le rôle :
+  1. Arrête les conteneurs
+  2. Supprime le conteneur MariaDB
+  3. Supprime le volume `glpi_mariadb-data`
+  4. Relance les conteneurs → import automatique du nouveau dump
 
 ## Utilisation
 
-### 1. Déploiement simple
+### 1. Déploiement initial
 
-Créer un playbook `deploy_glpi.yml`:
+Créer un playbook `deploy_glpi.yml` :
 
 ```yaml
 ---
-- name: Déployer GLPI
-  hosts: glpi_servers
+- name: Déployer GLPI avec Docker
+  hosts: GLPI
   become: yes
   roles:
+    - Install_Docker  # Si Docker n'est pas déjà installé
     - GLPI
 ```
 
-Exécuter:
+Exécuter :
 ```bash
-ansible-playbook -i inventory.yml deploy_glpi.yml
+ansible-playbook -i 00_inventory.yml deploy_glpi.yml
 ```
 
-### 2. Déploiement avec configuration personnalisée
+### 2. Ajouter votre dump SQL initial
 
-Créer un fichier de variables `group_vars/glpi_servers.yml`:
-
-```yaml
----
-glpi_port: 80
-glpi_timezone: "Europe/Paris"
-
-# Configuration LDAP
-glpi_ldap_enabled: true
-glpi_ldap_host: "ad.example.com"
-glpi_ldap_port: 636
-glpi_ldap_basedn: "DC=example,DC=com"
-glpi_ldap_rootdn: "CN=glpi_service,OU=ServiceAccounts,DC=example,DC=com"
+Placez votre dump SQL dans :
 ```
+roles/GLPI/files/docker-entrypoint-initdb.d/votre_dump.sql
+```
+
+**Format requis du dump :**
+```sql
+USE glpi;
+
+DROP TABLE IF EXISTS `glpi_users`;
+CREATE TABLE `glpi_users` ...
+-- etc.
+```
+
+Le dump **doit** contenir `USE glpi;` au début pour sélectionner la bonne base.
 
 ### 3. Sécuriser les mots de passe avec Ansible Vault
 
-Créer un fichier vault `group_vars/glpi_servers/vault.yml`:
+Créer un fichier vault `group_vars/all/vault.yml` :
 
 ```bash
-ansible-vault create group_vars/glpi_servers/vault.yml
+ansible-vault create group_vars/all/vault.yml
 ```
 
-Contenu:
+Contenu :
 ```yaml
 ---
-vault_glpi_mysql_root_password: "SuperSecretRootPassword"
-vault_glpi_mysql_password: "SecureGlpiPassword"
-vault_glpi_admin_password: "SecureAdminPassword"
-vault_ldap_bind_password: "LdapBindPassword"
+vault_mariadb_root_password: "VotreMotDePasseRootTresSecurise123!"
+vault_mariadb_password: "VotreMotDePasseGlpiTresSecurise456!"
 ```
 
-Exécuter avec vault:
+Référencer dans `group_vars/all/vars.yml` :
+```yaml
+---
+mariadb_root_password: "{{ vault_mariadb_root_password }}"
+mariadb_password: "{{ vault_mariadb_password }}"
+glpi_db_password: "{{ vault_mariadb_password }}"
+```
+
+Exécuter avec vault :
 ```bash
-ansible-playbook -i inventory.yml deploy_glpi.yml --ask-vault-pass
+ansible-playbook -i 00_inventory.yml deploy_glpi.yml --ask-vault-pass
 ```
 
-## Première connexion
+## Accès à GLPI
 
-Après le déploiement, GLPI est accessible à l'adresse:
+Après le déploiement, GLPI est accessible à l'adresse :
 ```
-http://<ip_serveur>:8080
+http://172.16.0.5
 ```
 
-**Identifiants par défaut:**
-- Utilisateur: `glpi`
-- Mot de passe: `glpi` (ou la valeur de `glpi_admin_password`)
+Les identifiants dépendent de votre dump SQL importé.
 
-**⚠️ IMPORTANT:** Changez immédiatement le mot de passe après la première connexion !
+## Sauvegarde de la base de données
 
-## Sauvegarde et restauration
+### Script de backup
 
-### Sauvegarde automatique
+Le script `backup_glpi.sh` est disponible dans `roles/GLPI/files/` et s'exécute **depuis le serveur Ansible** (pas depuis le LXC).
 
-Un script de sauvegarde est déployé dans `/opt/glpi/backup_glpi.sh`.
+**Caractéristiques :**
+- Utilise l'inventaire Ansible pour la connexion SSH
+- Se connecte au LXC GLPI via Ansible
+- Exécute `mysqldump` dans le conteneur MariaDB
+- Sauvegarde directement dans `roles/GLPI/files/docker-entrypoint-initdb.d/`
+- Ajoute automatiquement `USE glpi;` au début du dump
 
-**Lancer une sauvegarde manuelle:**
+**Usage :**
 ```bash
-bash /opt/glpi/backup_glpi.sh
+./roles/GLPI/files/backup_glpi.sh nom_du_dump
 ```
 
-**Automatiser avec cron (quotidien à 2h):**
+**Exemple :**
 ```bash
-crontab -e
-# Ajouter:
-0 2 * * * /opt/glpi/backup_glpi.sh >> /var/log/glpi_backup.log 2>&1
+# Créer un backup nommé "glpidb_prod"
+./roles/GLPI/files/backup_glpi.sh glpidb_prod
+
+# Résultat : roles/GLPI/files/docker-entrypoint-initdb.d/glpidb_prod.sql
 ```
 
-Les sauvegardes sont stockées dans `/opt/glpi/backups/` et conservées 7 jours par défaut.
-
-### Restauration
-
-**Lister les sauvegardes disponibles:**
+**Workflow complet backup → restauration :**
 ```bash
-bash /opt/glpi/restore_glpi.sh
+# 1. Faire un backup
+./roles/GLPI/files/backup_glpi.sh glpidb_20250130
+
+# 2. Supprimer l'ancien dump (optionnel)
+rm roles/GLPI/files/docker-entrypoint-initdb.d/ancien_dump.sql
+
+# 3. Relancer Ansible → détection du changement → réimport automatique
+ansible-playbook -i 00_inventory.yml deploy_glpi.yml
 ```
 
-**Restaurer une sauvegarde:**
+### Configuration du script
+
+Éditer les variables dans `backup_glpi.sh` si nécessaire :
+
 ```bash
-bash /opt/glpi/restore_glpi.sh glpi_backup_20250102_143000
+INVENTORY="/work/Ansible/00_inventory.yml"  # Chemin de l'inventaire
+HOST="GLPI"                                  # Nom du host dans l'inventaire
+CONTAINER_NAME="mariadb"                     # Nom du conteneur MariaDB
+DB_USER="glpi_user"                          # Utilisateur DB
+DB_PASSWORD="GlpiUserPassw0rd!"              # Mot de passe DB
+DB_NAME="glpi"                               # Nom de la base
+BACKUP_DIR="/work/Ansible/roles/GLPI/files/docker-entrypoint-initdb.d"
 ```
 
 ## Maintenance
 
 ### Mettre à jour GLPI
 
-Modifier la version dans `defaults/main.yml`:
+Modifier la version dans `defaults/main.yml` :
 ```yaml
-glpi_version: "11.0.3"  # Nouvelle version
+glpi_version: "11.0.5"  # Nouvelle version
 ```
 
-Relancer le playbook:
+Relancer le playbook :
 ```bash
-ansible-playbook -i inventory.yml deploy_glpi.yml
+ansible-playbook -i 00_inventory.yml deploy_glpi.yml
 ```
 
-La mise à jour de la base de données est automatique via `php bin/console db:update`.
+Le conteneur sera recréé avec la nouvelle version.
+
+### Changer le dump SQL
+
+1. Placez le nouveau dump dans `files/docker-entrypoint-initdb.d/`
+2. Supprimez l'ancien dump (optionnel mais recommandé)
+3. Relancez le playbook → Ansible détectera le changement et réinitialisera automatiquement la base
 
 ### Accéder aux logs
 
-**Logs GLPI:**
+**Logs GLPI :**
 ```bash
 docker logs glpi
 ```
 
-**Logs MariaDB:**
+**Logs MariaDB :**
 ```bash
-docker logs glpi_db
+docker logs mariadb
 ```
 
-**Logs GLPI dans le conteneur:**
+**Logs en temps réel :**
 ```bash
-docker exec -it glpi tail -f /var/www/html/files/_log/php-errors.log
+docker logs -f glpi
+docker logs -f mariadb
 ```
 
 ### Commandes utiles
 
-**Redémarrer GLPI:**
+**Redémarrer les conteneurs :**
 ```bash
-cd /opt/glpi && docker compose restart
+cd /srv/glpi && docker compose restart
 ```
 
-**Arrêter GLPI:**
+**Arrêter les conteneurs :**
 ```bash
-cd /opt/glpi && docker compose down
+cd /srv/glpi && docker compose down
 ```
 
-**Accéder au shell GLPI:**
+**Supprimer complètement (y compris volumes) :**
+```bash
+cd /srv/glpi && docker compose down -v
+```
+
+**Accéder au shell GLPI :**
 ```bash
 docker exec -it glpi bash
 ```
 
-**Accéder à la console MySQL:**
+**Accéder à la console MySQL :**
 ```bash
-docker exec -it glpi_db mysql -u glpi -p glpi
+docker exec -it mariadb mysql -uglpi_user -p'GlpiUserPassw0rd!' glpi
 ```
 
-**Exécuter une commande CLI GLPI:**
+**Vérifier l'état des conteneurs :**
 ```bash
-docker exec glpi php bin/console <commande>
+docker ps | grep -E "glpi|mariadb"
 ```
 
-Exemples:
-```bash
-# Vérifier l'état de la base
-docker exec glpi php bin/console db:check
-
-# Synchroniser les utilisateurs LDAP
-docker exec glpi php bin/console glpi:ldap:synchronize_users -c
-
-# Lister les plugins
-docker exec glpi php bin/console glpi:plugin:list
-```
-
-## Volumes Docker
-
-Les données persistantes sont stockées dans les volumes Docker:
-
-| Volume | Contenu |
-|--------|---------|
-| `glpi_db_data` | Base de données MariaDB |
-| `glpi_config` | Fichiers de configuration GLPI |
-| `glpi_files` | Documents uploadés par les utilisateurs |
-| `glpi_marketplace` | Plugins du marketplace |
-| `glpi_plugins` | Plugins personnalisés |
-
-**Inspecter les volumes:**
+**Inspecter les volumes :**
 ```bash
 docker volume ls | grep glpi
-docker volume inspect glpi_db_data
+docker volume inspect glpi_mariadb-data
+```
+
+## Workflow de développement/production
+
+### Développement
+
+1. Travaillez sur votre GLPI de dev
+2. Faites un backup :
+   ```bash
+   ./backup_glpi.sh glpidb_dev_$(date +%Y%m%d)
+   ```
+
+### Passage en production
+
+1. Faites un backup de la prod actuelle :
+   ```bash
+   ./backup_glpi.sh glpidb_prod_backup_$(date +%Y%m%d)
+   ```
+
+2. Copiez votre dump de dev dans `files/docker-entrypoint-initdb.d/` :
+   ```bash
+   cp glpidb_dev_20250130.sql roles/GLPI/files/docker-entrypoint-initdb.d/
+   rm roles/GLPI/files/docker-entrypoint-initdb.d/glpidb_prod_*.sql
+   ```
+
+3. Relancez Ansible sur la prod :
+   ```bash
+   ansible-playbook -i 00_inventory.yml deploy_glpi.yml --limit GLPI
+   ```
+
+### Rollback
+
+Si besoin de revenir en arrière :
+```bash
+# 1. Remettre l'ancien dump
+cp roles/GLPI/files/docker-entrypoint-initdb.d/glpidb_prod_backup_20250130.sql \
+   roles/GLPI/files/docker-entrypoint-initdb.d/glpidb_prod.sql
+
+# 2. Supprimer le dump problématique
+rm roles/GLPI/files/docker-entrypoint-initdb.d/glpidb_dev_*.sql
+
+# 3. Relancer Ansible
+ansible-playbook -i 00_inventory.yml deploy_glpi.yml --limit GLPI
 ```
 
 ## Dépannage
 
 ### GLPI ne démarre pas
 
-Vérifier les logs:
+Vérifier les logs détaillés :
 ```bash
 docker logs glpi
-docker logs glpi_db
+docker inspect glpi --format='{{.State.Status}}: {{.State.Error}}'
 ```
 
-Vérifier que la base de données est accessible:
+Vérifier que MariaDB est healthy :
 ```bash
-docker exec glpi_db mysqladmin ping -h localhost
+docker ps | grep mariadb
+# Doit afficher "(healthy)" dans la colonne STATUS
 ```
 
-### Erreur de connexion LDAP
+### La base n'est pas restaurée
 
-Tester la connexion depuis le conteneur:
+Vérifier que le dump est bien présent :
 ```bash
-docker exec glpi apt-get update && apt-get install -y ldap-utils
-docker exec glpi ldapsearch -H ldaps://ad.gsb.local:636 -D "CN=glpi_bind,..." -W -b "DC=gsb,DC=local"
+ls -lh /srv/glpi/dump/
 ```
+
+Vérifier que le volume MariaDB a bien été supprimé et recréé :
+```bash
+docker volume ls | grep mariadb
+```
+
+Forcer la réinitialisation :
+```bash
+cd /srv/glpi
+docker compose down -v
+docker volume rm glpi_mariadb-data
+docker compose up -d
+docker logs -f mariadb  # Suivre l'import
+```
+
+### Erreur "no such file or directory" au démarrage GLPI
+
+Vérifiez que les volumes pointent bien vers `/var/glpi/*` et non `/var/www/html/glpi/*`.
+
+L'image officielle GLPI utilise `/var/glpi` comme répertoire de données et crée automatiquement les liens symboliques vers `/var/www/html/glpi`.
+
+### MariaDB n'importe pas le dump
+
+Le dump doit :
+1. Commencer par `USE glpi;`
+2. Avoir l'extension `.sql`
+3. Être dans `/srv/glpi/dump/` sur le LXC
+4. Le volume MariaDB doit être **vide** (première création)
 
 ### Réinitialiser complètement GLPI
 
-**⚠️ ATTENTION: Ceci supprime toutes les données !**
+**⚠️ ATTENTION : Ceci supprime toutes les données !**
 
+Depuis le serveur Ansible :
 ```bash
-cd /opt/glpi
-docker compose down -v  # -v supprime les volumes
-docker volume rm glpi_db_data glpi_config glpi_files glpi_marketplace glpi_plugins
-ansible-playbook -i inventory.yml deploy_glpi.yml  # Redéployer
+ansible GLPI -i 00_inventory.yml -m shell -a "cd /srv/glpi && docker compose down -v"
+ansible-playbook -i 00_inventory.yml deploy_glpi.yml --limit GLPI
+```
+
+Ou directement sur le LXC :
+```bash
+cd /srv/glpi
+docker compose down -v
+# Relancer le playbook Ansible
 ```
 
 ## Support et documentation
 
-- Documentation officielle GLPI: https://glpi-install.readthedocs.io/
-- GitHub GLPI: https://github.com/glpi-project/glpi
-- Forum GLPI: https://forum.glpi-project.org/
+- Documentation officielle GLPI : https://glpi-install.readthedocs.io/
+- Image Docker GLPI : https://github.com/glpi-project/docker-images
+- Documentation MariaDB : https://mariadb.com/kb/en/docker-official-image/
+- GitHub GLPI : https://github.com/glpi-project/glpi
 
 ## Licence
 
