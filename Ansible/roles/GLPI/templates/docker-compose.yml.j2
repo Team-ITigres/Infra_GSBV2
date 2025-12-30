@@ -35,11 +35,10 @@ services:
       # Timezone
       TZ: Europe/Paris
     volumes:
-      - glpi-data:/var/www/html/glpi
-      # Persistance des fichiers importants
-      - glpi-files:/var/www/html/glpi/files
-      - glpi-config:/var/www/html/glpi/config
-      - glpi-marketplace:/var/www/html/glpi/marketplace
+      # Persistance des fichiers importants sur /var/glpi (utilisé par l'image officielle)
+      - glpi-files:/var/glpi/files
+      - glpi-config:/var/glpi/config
+      - glpi-marketplace:/var/glpi/marketplace
     ports:
       - "80:80"
     networks:
@@ -52,7 +51,6 @@ services:
 
 volumes:
   mariadb-data:
-  glpi-data:
   glpi-files:
   glpi-config:
   glpi-marketplace:

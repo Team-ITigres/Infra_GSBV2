@@ -5,11 +5,39 @@
     state: directory
     mode: '0755'
 
-- name: Copier les fichiers SQL d'initialisation depuis le rôle Ansible
+- name: Lister les fichiers SQL dans le rôle Ansible
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/docker-entrypoint-initdb.d/"
+    patterns: "*.sql"
+  delegate_to: localhost
+  register: local_sql_files
+
+- name: Créer le dossier dump
+  ansible.builtin.file:
+    path: /srv/glpi/dump
+    state: directory
+    mode: '0755'
+
+- name: Extraire les noms de fichiers SQL locaux
+  ansible.builtin.set_fact:
+    local_sql_names: "{{ local_sql_files.files | map(attribute='path') | map('basename') | list }}"
+
+- name: Supprimer TOUS les fichiers SQL existants dans dump/
+  ansible.builtin.shell: rm -f /srv/glpi/dump/*.sql
+  register: cleanup_old_dumps
+  changed_when: false
+
+- name: Copier les fichiers SQL d'initialisation
   ansible.builtin.copy:
-    src: docker-entrypoint-initdb.d/
-    dest: /srv/glpi/dump/
+    src: "{{ item.path }}"
+    dest: "/srv/glpi/dump/{{ item.path | basename }}"
     mode: '0644'
+  loop: "{{ local_sql_files.files }}"
+  register: dump_copy
+
+- name: Détecter si le dump a changé
+  ansible.builtin.set_fact:
+    dump_sync_changed: "{{ dump_copy.changed }}"
 
 - name: Déployer le docker-compose.yml
   ansible.builtin.template:
@@ -18,13 +46,50 @@
     mode: '0644'
   register: docker_compose_deployed
 
+- name: Arrêter les conteneurs si le dump a changé
+  community.docker.docker_compose_v2:
+    project_src: /srv/glpi
+    state: stopped
+  when: dump_sync_changed
+
+- name: Supprimer le conteneur MariaDB pour libérer le volume
+  ansible.builtin.command: docker rm mariadb
+  when: dump_sync_changed
+  register: container_rm
+  failed_when:
+    - container_rm.rc != 0
+    - "'No such container' not in container_rm.stderr"
+
+- name: Supprimer le volume MariaDB si le dump a changé
+  ansible.builtin.command: docker volume rm glpi_mariadb-data
+  when: dump_sync_changed
+  register: volume_remove
+  failed_when:
+    - volume_remove.rc != 0
+    - "'no such volume' not in volume_remove.stderr"
+
 - name: Lancer les conteneurs GLPI
   community.docker.docker_compose_v2:
     project_src: /srv/glpi
     state: present
     recreate: "{{ 'always' if docker_compose_deployed.changed else 'never' }}"
 
-- name: Attendre que la base de données soit initialisée
-  ansible.builtin.wait_for:
-    timeout: 30
-  delegate_to: localhost
+- name: Attendre que MariaDB soit complètement initialisée avec le dump
+  ansible.builtin.shell: |
+    for i in {1..60}; do
+      if docker exec mariadb mysql -u{{ mariadb_user }} -p'{{ mariadb_password }}' {{ mariadb_database }} -e "SELECT COUNT(*) FROM glpi_users;" &>/dev/null; then
+        echo "Base de données prête"
+        exit 0
+      fi
+      echo "Attente de l'import du dump... ($i/60)"
+      sleep 2
+    done
+    exit 1
+  when: dump_sync_changed
+  register: db_wait
+  failed_when: db_wait.rc != 0
+
+- name: Afficher message d'import
+  ansible.builtin.debug:
+    msg: "Base de données réinitialisée avec le nouveau dump SQL"
+  when: dump_sync_changed

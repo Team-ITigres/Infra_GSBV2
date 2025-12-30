@@ -690,7 +690,7 @@ CREATE TABLE `glpi_authldaps` (
 LOCK TABLES `glpi_authldaps` WRITE;
 /*!40000 ALTER TABLE `glpi_authldaps` DISABLE KEYS */;
 INSERT INTO `glpi_authldaps` VALUES
-(1,'AD GSB','172.16.0.1','fezf','',389,'','uid','',0,'','',0,'','mail','sn','givenname','telephonenumber','','','',0,0,0,'','','','2025-12-27 14:12:14','Test pour Docker mon gaté',0,0,'','','','','','','',0,0,0,'','','','2025-12-27 14:12:14',NULL,NULL,NULL,1,10,NULL);
+(1,'AD GSB','172.16.0.1','DC=gsb,DC=local','CN=glpi_bind,OU=Comptes_Services,DC=gsb,DC=local',389,'(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(!(sAMAccountName=Administrateur))(!(distinguishedName=CN=glpi_bind,OU=Comptes_Services,DC=gsb,DC=local)))','samaccountname','samaccountname',0,'','',0,'','mail','sn','givenname','telephonenumber','','','',0,0,0,'','','','2025-12-30 22:22:54','Infra GSB',0,1,'fHuW0VrKd5fDq2eHSh/o5pSOHMOMo2gsnKD+mHIhsP3ODPNCz1WUOAVfQiz1DCoZKgWygA==','','','','','','',0,0,0,'','','','2025-12-27 14:12:14',NULL,NULL,NULL,1,10,NULL);
 /*!40000 ALTER TABLE `glpi_authldaps` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3067,7 +3067,7 @@ CREATE TABLE `glpi_crontasklogs` (
   KEY `date` (`date`),
   KEY `crontasks_id` (`crontasks_id`),
   KEY `crontasklogs_id_state` (`crontasklogs_id`,`state`)
-) ENGINE=InnoDB AUTO_INCREMENT=235 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=303 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3310,7 +3310,75 @@ INSERT INTO `glpi_crontasklogs` VALUES
 (231,46,0,'2025-12-27 16:21:01',0,0,0,'Run mode: CLI'),
 (232,46,231,'2025-12-27 16:21:01',2,0.379471,0,'Action completed, no processing required'),
 (233,46,0,'2025-12-27 16:22:01',0,0,0,'Run mode: CLI'),
-(234,46,233,'2025-12-27 16:22:01',2,0.294197,0,'Action completed, no processing required');
+(234,46,233,'2025-12-27 16:22:01',2,0.294197,0,'Action completed, no processing required'),
+(235,46,0,'2025-12-30 21:58:01',0,0,0,'Run mode: CLI'),
+(236,46,235,'2025-12-30 21:58:01',2,0.191974,0,'Action completed, no processing required'),
+(237,42,0,'2025-12-30 21:58:01',0,0,0,'Run mode: CLI'),
+(238,42,237,'2025-12-30 21:58:01',2,0.00492692,0,'Action completed, fully processed'),
+(239,39,0,'2025-12-30 21:58:01',0,0,0,'Run mode: CLI'),
+(240,39,239,'2025-12-30 21:58:01',2,0.00265408,0,'Action completed, no processing required'),
+(241,44,0,'2025-12-30 21:58:01',0,0,0,'Run mode: CLI'),
+(242,44,241,'2025-12-30 21:58:01',2,0.00587797,0,'Action completed, no processing required'),
+(243,48,0,'2025-12-30 21:58:01',0,0,0,'Run mode: CLI'),
+(244,48,243,'2025-12-30 21:58:01',2,0.00343299,0,'Action completed, fully processed'),
+(245,14,0,'2025-12-30 21:58:05',0,0,0,'Run mode: GLPI'),
+(246,14,245,'2025-12-30 21:58:05',2,0.30836,0,'Action completed, no processing required'),
+(247,46,0,'2025-12-30 21:59:02',0,0,0,'Run mode: CLI'),
+(248,46,247,'2025-12-30 21:59:02',2,0.362495,0,'Action completed, no processing required'),
+(249,46,0,'2025-12-30 22:00:02',0,0,0,'Run mode: CLI'),
+(250,46,249,'2025-12-30 22:00:02',2,0.339501,0,'Action completed, no processing required'),
+(251,46,0,'2025-12-30 22:01:02',0,0,0,'Run mode: CLI'),
+(252,46,251,'2025-12-30 22:01:02',2,0.197483,0,'Action completed, no processing required'),
+(253,46,0,'2025-12-30 22:02:01',0,0,0,'Run mode: CLI'),
+(254,46,253,'2025-12-30 22:02:01',2,0.187352,0,'Action completed, no processing required'),
+(255,46,0,'2025-12-30 22:03:01',0,0,0,'Run mode: CLI'),
+(256,46,255,'2025-12-30 22:03:01',2,0.298201,0,'Action completed, no processing required'),
+(257,46,0,'2025-12-30 22:04:02',0,0,0,'Run mode: CLI'),
+(258,46,257,'2025-12-30 22:04:02',2,0.187838,0,'Action completed, no processing required'),
+(259,46,0,'2025-12-30 22:05:02',0,0,0,'Run mode: CLI'),
+(260,46,259,'2025-12-30 22:05:02',2,0.251406,0,'Action completed, no processing required'),
+(261,15,0,'2025-12-30 22:05:48',0,0,0,'Run mode: GLPI'),
+(262,15,261,'2025-12-30 22:05:48',2,0.037509,0,'Action completed, no processing required'),
+(263,46,0,'2025-12-30 22:06:01',0,0,0,'Run mode: CLI'),
+(264,46,263,'2025-12-30 22:06:01',2,0.303064,0,'Action completed, no processing required'),
+(265,46,0,'2025-12-30 22:07:01',0,0,0,'Run mode: CLI'),
+(266,46,265,'2025-12-30 22:07:01',2,0.307188,0,'Action completed, no processing required'),
+(267,46,0,'2025-12-30 22:08:01',0,0,0,'Run mode: CLI'),
+(268,46,267,'2025-12-30 22:08:01',2,0.301688,0,'Action completed, no processing required'),
+(269,46,0,'2025-12-30 22:09:02',0,0,0,'Run mode: CLI'),
+(270,46,269,'2025-12-30 22:09:02',2,0.190138,0,'Action completed, no processing required'),
+(271,46,0,'2025-12-30 22:10:01',0,0,0,'Run mode: CLI'),
+(272,46,271,'2025-12-30 22:10:01',2,0.18562,0,'Action completed, no processing required'),
+(273,46,0,'2025-12-30 22:11:01',0,0,0,'Run mode: CLI'),
+(274,46,273,'2025-12-30 22:11:01',2,0.240701,0,'Action completed, no processing required'),
+(275,16,0,'2025-12-30 22:11:43',0,0,0,'Run mode: GLPI'),
+(276,16,275,'2025-12-30 22:11:43',2,0.406983,0,'Action completed, no processing required'),
+(277,46,0,'2025-12-30 22:12:01',0,0,0,'Run mode: CLI'),
+(278,46,277,'2025-12-30 22:12:01',2,0.192491,0,'Action completed, no processing required'),
+(279,46,0,'2025-12-30 22:14:01',0,0,0,'Run mode: CLI'),
+(280,46,279,'2025-12-30 22:14:01',2,0.356439,0,'Action completed, no processing required'),
+(281,46,0,'2025-12-30 22:15:01',0,0,0,'Run mode: CLI'),
+(282,46,281,'2025-12-30 22:15:01',2,0.19614,0,'Action completed, no processing required'),
+(283,46,0,'2025-12-30 22:16:01',0,0,0,'Run mode: CLI'),
+(284,46,283,'2025-12-30 22:16:01',2,0.301977,0,'Action completed, no processing required'),
+(285,46,0,'2025-12-30 22:17:02',0,0,0,'Run mode: CLI'),
+(286,46,285,'2025-12-30 22:17:02',2,0.286676,0,'Action completed, no processing required'),
+(287,46,0,'2025-12-30 22:18:01',0,0,0,'Run mode: CLI'),
+(288,46,287,'2025-12-30 22:18:01',2,0.185395,0,'Action completed, no processing required'),
+(289,17,0,'2025-12-30 22:18:17',0,0,0,'Run mode: GLPI'),
+(290,17,289,'2025-12-30 22:18:17',2,0.293894,0,'Action completed, no processing required'),
+(291,18,0,'2025-12-30 22:18:26',0,0,0,'Run mode: GLPI'),
+(292,18,291,'2025-12-30 22:18:26',2,0.0451751,0,'Action completed, no processing required'),
+(293,46,0,'2025-12-30 22:19:01',0,0,0,'Run mode: CLI'),
+(294,46,293,'2025-12-30 22:19:01',2,0.294634,0,'Action completed, no processing required'),
+(295,46,0,'2025-12-30 22:20:02',0,0,0,'Run mode: CLI'),
+(296,46,295,'2025-12-30 22:20:02',2,0.36753,0,'Action completed, no processing required'),
+(297,46,0,'2025-12-30 22:21:02',0,0,0,'Run mode: CLI'),
+(298,46,297,'2025-12-30 22:21:02',2,0.188109,0,'Action completed, no processing required'),
+(299,46,0,'2025-12-30 22:22:01',0,0,0,'Run mode: CLI'),
+(300,46,299,'2025-12-30 22:22:01',2,0.323789,0,'Action completed, no processing required'),
+(301,46,0,'2025-12-30 22:23:02',0,0,0,'Run mode: CLI'),
+(302,46,301,'2025-12-30 22:23:02',2,0.192559,0,'Action completed, no processing required');
 /*!40000 ALTER TABLE `glpi_crontasklogs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3365,11 +3433,11 @@ INSERT INTO `glpi_crontasks` VALUES
 (11,'CronTask','checkupdate',604800,NULL,0,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
 (12,'CronTask','session',86400,NULL,1,1,3,0,24,30,'2025-12-27 14:13:00',NULL,NULL,NULL,NULL),
 (13,'CronTask','graph',3600,NULL,1,1,3,0,24,30,'2025-12-27 14:13:00',NULL,NULL,NULL,NULL),
-(14,'ReservationItem','reservation',3600,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
-(15,'Ticket','closeticket',43200,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
-(16,'Ticket','alertnotclosed',43200,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
-(17,'SlaLevel_Ticket','slaticket',300,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
-(18,'Ticket','createinquest',86400,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
+(14,'ReservationItem','reservation',3600,NULL,1,1,3,0,24,30,'2025-12-30 21:58:00',NULL,NULL,NULL,NULL),
+(15,'Ticket','closeticket',43200,NULL,1,1,3,0,24,30,'2025-12-30 22:05:00',NULL,NULL,NULL,NULL),
+(16,'Ticket','alertnotclosed',43200,NULL,1,1,3,0,24,30,'2025-12-30 22:11:00',NULL,NULL,NULL,NULL),
+(17,'SlaLevel_Ticket','slaticket',300,NULL,1,1,3,0,24,30,'2025-12-30 22:18:00',NULL,NULL,NULL,NULL),
+(18,'Ticket','createinquest',86400,NULL,1,1,3,0,24,30,'2025-12-30 22:18:00',NULL,NULL,NULL,NULL),
 (19,'CronTask','watcher',86400,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
 (20,'CommonITILRecurrentCron','RecurrentItems',3600,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
 (21,'PlanningRecall','planningrecall',300,NULL,1,1,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
@@ -3390,16 +3458,16 @@ INSERT INTO `glpi_crontasks` VALUES
 (36,'User','passwordexpiration',86400,100,0,2,3,0,24,30,NULL,NULL,NULL,NULL,NULL),
 (37,'Glpi\\Marketplace\\Controller','checkAllUpdates',86400,NULL,1,2,3,0,6,30,NULL,NULL,NULL,NULL,NULL),
 (38,'CleanSoftwareCron','cleansoftware',2592000,1000,0,2,3,0,6,300,NULL,NULL,NULL,NULL,NULL),
-(39,'Domain','DomainsAlert',86400,NULL,1,2,3,0,24,30,'2025-12-27 14:09:00',NULL,NULL,NULL,NULL),
+(39,'Domain','DomainsAlert',86400,NULL,1,2,3,0,24,30,'2025-12-30 21:58:00',NULL,NULL,NULL,NULL),
 (40,'Glpi\\Inventory\\Inventory','cleantemp',86400,NULL,0,2,3,0,6,30,NULL,NULL,NULL,NULL,NULL),
 (41,'Glpi\\Inventory\\Inventory','cleanorphans',86400,NULL,1,2,3,0,6,30,NULL,NULL,NULL,NULL,NULL),
-(42,'PendingReasonCron','pendingreason_autobump_autosolve',1800,NULL,1,2,3,0,24,60,'2025-12-27 16:16:00',NULL,NULL,NULL,NULL),
+(42,'PendingReasonCron','pendingreason_autobump_autosolve',1800,NULL,1,2,3,0,24,60,'2025-12-30 21:58:00',NULL,NULL,NULL,NULL),
 (43,'Agent','Cleanoldagents',86400,NULL,1,2,3,0,6,30,NULL,NULL,NULL,NULL,NULL),
-(44,'Change','createinquest',86400,NULL,1,2,3,0,24,30,'2025-12-27 14:09:00',NULL,NULL,NULL,NULL),
+(44,'Change','createinquest',86400,NULL,1,2,3,0,24,30,'2025-12-30 21:58:00',NULL,NULL,NULL,NULL),
 (45,'QueuedNotification','queuednotificationcleanstaleajax',86400,NULL,0,2,3,0,6,30,NULL,NULL,NULL,NULL,NULL),
-(46,'QueuedWebhook','queuedwebhook',60,50,1,2,3,0,24,30,'2025-12-27 16:22:00',NULL,NULL,NULL,NULL),
+(46,'QueuedWebhook','queuedwebhook',60,50,1,2,3,0,24,30,'2025-12-30 22:23:00',NULL,NULL,NULL,NULL),
 (47,'QueuedWebhook','queuedwebhookclean',86400,30,1,2,3,0,6,30,NULL,NULL,NULL,NULL,NULL),
-(48,'Glpi\\Form\\Form','purgedraftforms',86400,7,1,2,3,0,24,30,'2025-12-27 14:09:00',NULL,NULL,NULL,NULL),
+(48,'Glpi\\Form\\Form','purgedraftforms',86400,7,1,2,3,0,24,30,'2025-12-30 21:58:00',NULL,NULL,NULL,NULL),
 (49,'Software','purgesoftware',2592000,1000,0,2,3,0,6,300,NULL,NULL,NULL,NULL,NULL),
 (50,'CommonITILValidationCron','approvalreminder',604800,NULL,0,2,3,0,24,30,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `glpi_crontasks` ENABLE KEYS */;
@@ -6632,7 +6700,7 @@ CREATE TABLE `glpi_events` (
   KEY `date` (`date`),
   KEY `level` (`level`),
   KEY `item` (`type`,`items_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -6647,7 +6715,10 @@ INSERT INTO `glpi_events` VALUES
 (3,0,'system','2025-12-27 14:13:32','login',3,'Connexion échouée de  depuis l\'IP 172.16.0.253'),
 (4,0,'system','2025-12-27 14:13:39','login',3,'Connexion échouée de glpi depuis l\'IP 172.16.0.253'),
 (5,0,'system','2025-12-27 14:13:47','login',3,'glpi se connecte depuis l\'IP 172.16.0.253'),
-(6,7,'users','2025-12-27 14:14:47','setup',4,'glpi adds the item Le Q');
+(6,7,'users','2025-12-27 14:14:47','setup',4,'glpi adds the item Le Q'),
+(7,0,'system','2025-12-30 21:58:00','login',3,'Connexion échouée de  depuis l\'IP 172.16.0.253'),
+(8,0,'system','2025-12-30 21:58:12','login',3,'glpi se connecte depuis l\'IP 172.16.0.253'),
+(9,0,'system','2025-12-30 22:18:34','login',3,'glpi se connecte depuis l\'IP 172.16.0.253');
 /*!40000 ALTER TABLE `glpi_events` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -11417,7 +11488,7 @@ CREATE TABLE `glpi_logs` (
   KEY `id_search_option` (`id_search_option`),
   KEY `old_id` (`old_id`),
   KEY `new_id` (`new_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1074 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=1151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -12499,7 +12570,84 @@ INSERT INTO `glpi_logs` VALUES
 (1070,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-27 16:21:01',0,'','N/A (231)',NULL,NULL),
 (1071,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-27 16:21:01',0,'','N/A (232)',NULL,NULL),
 (1072,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-27 16:22:01',0,'','N/A (233)',NULL,NULL),
-(1073,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-27 16:22:01',0,'','N/A (234)',NULL,NULL);
+(1073,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-27 16:22:01',0,'','N/A (234)',NULL,NULL),
+(1074,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 21:58:01',0,'','N/A (235)',NULL,NULL),
+(1075,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 21:58:01',0,'','N/A (236)',NULL,NULL),
+(1076,'CronTask',42,'CronTaskLog',17,'cron_pendingreason_autobump_autosolve','2025-12-30 21:58:01',0,'','N/A (237)',NULL,NULL),
+(1077,'CronTask',42,'CronTaskLog',17,'cron_pendingreason_autobump_autosolve','2025-12-30 21:58:01',0,'','N/A (238)',NULL,NULL),
+(1078,'CronTask',39,'CronTaskLog',17,'cron_DomainsAlert','2025-12-30 21:58:01',0,'','N/A (239)',NULL,NULL),
+(1079,'CronTask',39,'CronTaskLog',17,'cron_DomainsAlert','2025-12-30 21:58:01',0,'','N/A (240)',NULL,NULL),
+(1080,'CronTask',44,'CronTaskLog',17,'cron_createinquest','2025-12-30 21:58:01',0,'','N/A (241)',NULL,NULL),
+(1081,'CronTask',44,'CronTaskLog',17,'cron_createinquest','2025-12-30 21:58:01',0,'','N/A (242)',NULL,NULL),
+(1082,'CronTask',48,'CronTaskLog',17,'cron_purgedraftforms','2025-12-30 21:58:01',0,'','N/A (243)',NULL,NULL),
+(1083,'CronTask',48,'CronTaskLog',17,'cron_purgedraftforms','2025-12-30 21:58:01',0,'','N/A (244)',NULL,NULL),
+(1084,'CronTask',14,'CronTaskLog',17,'cron_reservation','2025-12-30 21:58:05',0,'','N/A (245)',NULL,NULL),
+(1085,'CronTask',14,'CronTaskLog',17,'cron_reservation','2025-12-30 21:58:05',0,'','N/A (246)',NULL,NULL),
+(1086,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 21:59:02',0,'','N/A (247)',NULL,NULL),
+(1087,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 21:59:02',0,'','N/A (248)',NULL,NULL),
+(1088,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:00:02',0,'','N/A (249)',NULL,NULL),
+(1089,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:00:02',0,'','N/A (250)',NULL,NULL),
+(1090,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:01:02',0,'','N/A (251)',NULL,NULL),
+(1091,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:01:02',0,'','N/A (252)',NULL,NULL),
+(1092,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:02:01',0,'','N/A (253)',NULL,NULL),
+(1093,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:02:01',0,'','N/A (254)',NULL,NULL),
+(1094,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:03:01',0,'','N/A (255)',NULL,NULL),
+(1095,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:03:01',0,'','N/A (256)',NULL,NULL),
+(1096,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:04:02',0,'','N/A (257)',NULL,NULL),
+(1097,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:04:02',0,'','N/A (258)',NULL,NULL),
+(1098,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:05:02',0,'','N/A (259)',NULL,NULL),
+(1099,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:05:02',0,'','N/A (260)',NULL,NULL),
+(1100,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:05:47',30,'0','1',NULL,NULL),
+(1101,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:05:47',16,'Test pour Docker mon gaté','',NULL,NULL),
+(1102,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:05:47',6,'','(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(!(sAMAccountName=Administrateur))(!(distinguishedName=CN=glpi_bind,OU=Comptes_Services,DC=gsb,DC=local)))',NULL,NULL),
+(1103,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:05:47',5,'fezf','DC=gsb,DC=local',NULL,NULL),
+(1104,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:05:47',8,'uid','samaccountname',NULL,NULL),
+(1105,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:05:47',28,'','samaccountname',NULL,NULL),
+(1106,'CronTask',15,'CronTaskLog',17,'cron_closeticket','2025-12-30 22:05:48',0,'','N/A (261)',NULL,NULL),
+(1107,'CronTask',15,'CronTaskLog',17,'cron_closeticket','2025-12-30 22:05:48',0,'','N/A (262)',NULL,NULL),
+(1108,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:06:01',0,'','N/A (263)',NULL,NULL),
+(1109,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:06:01',0,'','N/A (264)',NULL,NULL),
+(1110,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:07:01',0,'','N/A (265)',NULL,NULL),
+(1111,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:07:01',0,'','N/A (266)',NULL,NULL),
+(1112,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:08:01',0,'','N/A (267)',NULL,NULL),
+(1113,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:08:01',0,'','N/A (268)',NULL,NULL),
+(1114,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:09:02',0,'','N/A (269)',NULL,NULL),
+(1115,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:09:02',0,'','N/A (270)',NULL,NULL),
+(1116,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:10:01',0,'','N/A (271)',NULL,NULL),
+(1117,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:10:01',0,'','N/A (272)',NULL,NULL),
+(1118,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:11:01',0,'','N/A (273)',NULL,NULL),
+(1119,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:11:01',0,'','N/A (274)',NULL,NULL),
+(1120,'CronTask',16,'CronTaskLog',17,'cron_alertnotclosed','2025-12-30 22:11:43',0,'','N/A (275)',NULL,NULL),
+(1121,'CronTask',16,'CronTaskLog',17,'cron_alertnotclosed','2025-12-30 22:11:43',0,'','N/A (276)',NULL,NULL),
+(1122,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:12:01',0,'','N/A (277)',NULL,NULL),
+(1123,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:12:01',0,'','N/A (278)',NULL,NULL),
+(1124,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:14:01',0,'','N/A (279)',NULL,NULL),
+(1125,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:14:01',0,'','N/A (280)',NULL,NULL),
+(1126,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:14:25',16,'','AD Infra_GSB',NULL,NULL),
+(1127,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:15:01',0,'','N/A (281)',NULL,NULL),
+(1128,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:15:01',0,'','N/A (282)',NULL,NULL),
+(1129,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:15:22',16,'AD Infra_GSB','',NULL,NULL),
+(1130,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:16:01',0,'','N/A (283)',NULL,NULL),
+(1131,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:16:01',0,'','N/A (284)',NULL,NULL),
+(1132,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:17:02',0,'','N/A (285)',NULL,NULL),
+(1133,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:17:02',0,'','N/A (286)',NULL,NULL),
+(1134,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:18:01',0,'','N/A (287)',NULL,NULL),
+(1135,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:18:01',0,'','N/A (288)',NULL,NULL),
+(1136,'CronTask',17,'CronTaskLog',17,'cron_slaticket','2025-12-30 22:18:17',0,'','N/A (289)',NULL,NULL),
+(1137,'CronTask',17,'CronTaskLog',17,'cron_slaticket','2025-12-30 22:18:17',0,'','N/A (290)',NULL,NULL),
+(1138,'CronTask',18,'CronTaskLog',17,'cron_createinquest','2025-12-30 22:18:26',0,'','N/A (291)',NULL,NULL),
+(1139,'CronTask',18,'CronTaskLog',17,'cron_createinquest','2025-12-30 22:18:26',0,'','N/A (292)',NULL,NULL),
+(1140,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:19:01',0,'','N/A (293)',NULL,NULL),
+(1141,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:19:01',0,'','N/A (294)',NULL,NULL),
+(1142,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:20:02',0,'','N/A (295)',NULL,NULL),
+(1143,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:20:02',0,'','N/A (296)',NULL,NULL),
+(1144,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:21:02',0,'','N/A (297)',NULL,NULL),
+(1145,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:21:02',0,'','N/A (298)',NULL,NULL),
+(1146,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:22:01',0,'','N/A (299)',NULL,NULL),
+(1147,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:22:01',0,'','N/A (300)',NULL,NULL),
+(1148,'AuthLDAP',1,'',0,'glpi (2)','2025-12-30 22:22:54',16,'','Infra GSB',NULL,NULL),
+(1149,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:23:02',0,'','N/A (301)',NULL,NULL),
+(1150,'CronTask',46,'CronTaskLog',17,'cron_queuedwebhook','2025-12-30 22:23:02',0,'','N/A (302)',NULL,NULL);
 /*!40000 ALTER TABLE `glpi_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -21131,7 +21279,7 @@ CREATE TABLE `glpi_users` (
 LOCK TABLES `glpi_users` WRITE;
 /*!40000 ALTER TABLE `glpi_users` DISABLE KEYS */;
 INSERT INTO `glpi_users` VALUES
-(2,'glpi','$2y$12$HFUN.IpV7Tl/fSyIOj0UOOqecAmmXRGhEKVawZ7X9T1SwhZxE51bW','2025-12-27 14:13:19',NULL,NULL,NULL,NULL,NULL,0,NULL,0,20,1,NULL,0,1,'2025-12-27 14:13:47','2025-12-27 14:13:48',NULL,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'W7LhCYOJsWVN8sAsqhjVwPcjcEoWuAbA5YQ2tAoP49zqSBbD5MnZvqYx3yrVzmoZywqyKalsUe0e7BU3vpTO6z06ywSg7BIhwqOGftoyAAr6WiHKb5DZ/2bjRLH0v0YWuYvK4Q==','2025-12-27 14:13:48',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,'[\"$2y$12$I\\/5f11L9jssA6MUZoduZW.fwZXY1hmEZ.myc\\/sqMkZ4nfL5Xp48Q6\"]',NULL,NULL,NULL),
+(2,'glpi','$2y$12$HFUN.IpV7Tl/fSyIOj0UOOqecAmmXRGhEKVawZ7X9T1SwhZxE51bW','2025-12-27 14:13:19',NULL,NULL,NULL,NULL,NULL,0,NULL,0,20,1,NULL,0,1,'2025-12-30 22:18:34','2025-12-30 22:18:35',NULL,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'HZ7T+WrF1wzU4UuoYXnXrtdilYZ4dx1afIcjIpwNbhPpmDwlrSnXrEtxQudwzskcy2zVpI8oZpQ1VXP0Pu788qlrVnse/BltPpM6anMAkZQ5SodhVdQ90rvf0c6dHQbMYLBCpw==','2025-12-30 22:18:35',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,'[\"$2y$12$I\\/5f11L9jssA6MUZoduZW.fwZXY1hmEZ.myc\\/sqMkZ4nfL5Xp48Q6\"]',NULL,NULL,NULL),
 (3,'post-only','$2y$12$SNbgTIXP87/S9FYFHJ7esudCSk1Cbf.WsENxrO7FZYMAMxaAViQmK',NULL,NULL,NULL,NULL,NULL,NULL,0,'en_GB',0,20,1,NULL,0,1,NULL,NULL,NULL,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL),
 (4,'tech','$2y$12$ScJgeIR7yFogPlIba5MftuhiQ0/i5BnJuhpteYylBXBTSIsIfLPi2',NULL,NULL,NULL,NULL,NULL,NULL,0,'en_GB',0,20,1,NULL,0,1,NULL,NULL,NULL,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL),
 (5,'normal','$2y$12$f5FSZFHruqx6u9x0CnK1i.PF09qdDEeuypZpDOVSuzpJUdMDGTf0O',NULL,NULL,NULL,NULL,NULL,NULL,0,'en_GB',0,20,1,NULL,0,1,NULL,NULL,NULL,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL),
@@ -21521,4 +21669,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-27 16:23:01
+-- Dump completed on 2025-12-30 22:23:36
