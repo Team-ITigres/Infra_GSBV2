@@ -1,0 +1,19 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/Pulse_Agent
+
+# URL du serveur Pulse
+pulse_server_url: "http://172.16.0.5:7655"
+
+# Token d'authentification (généré par le rôle Pulse)
+# Ce token sera passé depuis le playbook via hostvars
+pulse_agent_token: ""
+
+# Fonctionnalités à activer
+pulse_agent_enable_docker: false
+pulse_agent_enable_kubernetes: false
+pulse_agent_enable_host_metrics: true
+
+# Configuration de l'agent
+pulse_agent_config_dir: "/etc/pulse-agent"
+pulse_agent_binary_path: "/usr/local/bin/pulse-agent"

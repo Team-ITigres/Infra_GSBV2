@@ -1,0 +1,64 @@
+- name: Créer le dossier Pulse
+  ansible.builtin.file:
+    path: /srv/pulse
+    state: directory
+    mode: '0755'
+
+- name: Déployer le docker-compose.yml pour Pulse
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /srv/pulse/docker-compose.yml
+    mode: '0644'
+  register: pulse_docker_compose_deployed
+
+- name: Lancer le conteneur Pulse
+  community.docker.docker_compose_v2:
+    project_src: /srv/pulse
+    state: present
+    recreate: "{{ 'always' if pulse_docker_compose_deployed.changed else 'never' }}"
+
+- name: Attendre que Pulse soit complètement démarré
+  ansible.builtin.uri:
+    url: "http://localhost:{{ pulse_frontend_port | default('7655') }}/health"
+    status_code: 200
+    timeout: 5
+  register: pulse_health_check
+  until: pulse_health_check.status == 200
+  retries: 12
+  delay: 5
+  ignore_errors: true
+
+- name: Créer un token API pour les agents d'infrastructure
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:{{ pulse_frontend_port }}/api/security/tokens"
+    method: POST
+    user: "{{ pulse_auth_user }}"
+    password: "{{ pulse_auth_pass }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "{{ pulse_agent_token_name }}"
+      scopes: ["monitoring:read", "monitoring:write"]
+    status_code: [200, 201]
+  register: pulse_agent_token_response
+  when: pulse_create_agent_token | default(true)
+  ignore_errors: true
+
+- name: Stocker le token comme fact Ansible (accessible via hostvars)
+  ansible.builtin.set_fact:
+    pulse_agent_token: "{{ pulse_agent_token_response.json.token }}"
+    cacheable: yes
+  when:
+    - pulse_create_agent_token | default(true)
+    - pulse_agent_token_response is defined
+    - pulse_agent_token_response.json is defined
+    - pulse_agent_token_response.json.token is defined
+
+- name: Afficher l'URL d'accès à Pulse
+  ansible.builtin.debug:
+    msg:
+      - "Pulse est déployé avec succès !"
+      - "URL d'accès: http://{{ ansible_host }}:{{ pulse_frontend_port | default('7655') }}"
+      - "Utilisateur: {{ pulse_auth_user }}"
+      - "Note: Changez le mot de passe par défaut après la première connexion"
+      - "{% if pulse_agent_token is defined %}Token pour agents: {{ pulse_agent_token }}{% endif %}"

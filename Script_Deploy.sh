@@ -12,7 +12,7 @@ fi
 
 # === CONFIG ===
 CTID=110
-CT_LIST=(110 113 114 115)
+CT_LIST=(110 113 114 115 116)
 VM_LIST=(201 202)
 CTNAME="terransible"
 HOSTNAME="terransible"
@@ -32,6 +32,8 @@ TOKEN_USER="terraform-prov@pve"
 TOKEN_NAME="auto-token"
 USER_ROLE="TerraformProv"
 TOKEN_PASSWORD="Formation13@TF"
+PULSE_USER="pulse-monitor@pam"
+PULSE_TOKEN_NAME="pulse-token"
 GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
 START_TIME=$(date +%s)
 TAG_ADMINBOX="0"
@@ -222,6 +224,47 @@ export TF_TOKEN_SECRET=$(echo "$TOKEN_OUTPUT" | jq -r '.value')
 
 echo "[+] Token créé avec succès: $TF_TOKEN_ID"
 
+# === 7. Création de l'utilisateur et du token pour Pulse ===
+echo "[+] Configuration de l'utilisateur Pulse pour le monitoring Proxmox..."
+
+# Suppression de l'utilisateur Pulse s'il existe déjà
+if pveum user list | grep -q "$PULSE_USER"; then
+  echo "[!] L'utilisateur $PULSE_USER existe déjà. Suppression en cours..."
+  pveum user delete "$PULSE_USER"
+fi
+
+# Création de l'utilisateur Pulse
+echo "[+] Création de l'utilisateur $PULSE_USER..."
+pveum user add "$PULSE_USER" --comment "Pulse monitoring service"
+
+# Création du token Pulse
+echo "[+] Création du token $PULSE_TOKEN_NAME pour Pulse..."
+PULSE_TOKEN_OUTPUT=$(pveum user token add "$PULSE_USER" "$PULSE_TOKEN_NAME" --privsep 0 --output-format json 2>/dev/null)
+
+if [ -z "$PULSE_TOKEN_OUTPUT" ]; then
+  echo "[!] Échec de la création du token Pulse"
+  exit 1
+fi
+
+export PULSE_TOKEN_ID="$PULSE_USER!$PULSE_TOKEN_NAME"
+export PULSE_TOKEN_SECRET=$(echo "$PULSE_TOKEN_OUTPUT" | jq -r '.value')
+
+# Attribution du rôle PVEAuditor
+echo "[+] Attribution du rôle PVEAuditor à $PULSE_USER..."
+pveum aclmod / -user "$PULSE_USER" -role PVEAuditor
+
+# Vérification et création du rôle PulseMonitor avec VM.Monitor
+echo "[+] Vérification du privilège VM.Monitor..."
+if pveum role list 2>/dev/null | grep -q "VM.Monitor" || pveum role add TestMonitor -privs VM.Monitor 2>/dev/null; then
+  pveum role delete TestMonitor 2>/dev/null || true
+  pveum role delete PulseMonitor 2>/dev/null || true
+  pveum role add PulseMonitor -privs VM.Monitor
+  pveum aclmod / -user "$PULSE_USER" -role PulseMonitor
+  echo "[+] Rôle PulseMonitor créé et attribué"
+fi
+
+echo "[+] Token Pulse créé avec succès: $PULSE_TOKEN_ID"
+
 # === 8. Connexion au conteneur pour setup ===
 echo "[+] Connexion au conteneur pour déploiement Terraform + Ansible..."
 echo "[+] Nettoyage du fichier known_hosts..."
@@ -282,6 +325,14 @@ TF_VAR_target_node=$node
 TF_VAR_chemin_cttemplate=$CHEMIN_TEMPLATE
 EOT
 
+echo "[+] Écriture du fichier .env_pulse pour Pulse monitoring..."
+cat <<EOT > /root/.env_pulse
+PULSE_PROXMOX_URL=$PM_API
+PULSE_PROXMOX_TOKEN_ID=$PULSE_TOKEN_ID
+PULSE_PROXMOX_TOKEN=$PULSE_TOKEN_SECRET
+PULSE_PROXMOX_NODE=$node
+EOT
+
 echo "[+] Téléchargement de l'image adminbox:0..."
 docker pull ghcr.io/leq-letigre/adminbox:0
 
@@ -289,9 +340,19 @@ echo "[+] Création de la fonction terransible avec tag $TAG_ADMINBOX..."
 cat >> /root/.bashrc <<FUNCEOF
 terransible() {
   if [ \\\$# -eq 0 ]; then
-    docker run --rm -it --network="host" -v /root/etc/ansible:/root/etc/ansible -v "\\\$PWD":/work --env-file /root/.env_tf ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
+    docker run --rm -it --network="host" \\
+      -v /root/etc/ansible:/root/etc/ansible \\
+      -v "\\\$PWD":/work \\
+      -v /root/.env_pulse:/root/.env_pulse:ro \\
+      --env-file /root/.env_tf \\
+      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
   else
-    docker run --rm --network="host" -v /root/etc/ansible:/root/etc/ansible -v "\\\$PWD":/work --env-file /root/.env_tf ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX "\\\$@"
+    docker run --rm --network="host" \\
+      -v /root/etc/ansible:/root/etc/ansible \\
+      -v "\\\$PWD":/work \\
+      -v /root/.env_pulse:/root/.env_pulse:ro \\
+      --env-file /root/.env_tf \\
+      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX "\\\$@"
   fi
 }
 FUNCEOF

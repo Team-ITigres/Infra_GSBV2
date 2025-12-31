@@ -1,0 +1,48 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/Pulse_Agent
+
+- name: Vérifier que le token Pulse est défini
+  ansible.builtin.assert:
+    that:
+      - pulse_agent_token is defined
+      - pulse_agent_token != ""
+    fail_msg: "Le token Pulse n'est pas défini. Assurez-vous que le rôle Pulse a été exécuté et que pulse_agent_token est passé."
+    success_msg: "Token Pulse trouvé"
+
+- name: Construire les flags d'installation
+  ansible.builtin.set_fact:
+    pulse_agent_install_flags: >-
+      {{ '--enable-docker' if pulse_agent_enable_docker else '' }}
+      {{ '--enable-kubernetes' if pulse_agent_enable_kubernetes else '' }}
+
+- name: Vérifier si l'agent Pulse est déjà installé
+  ansible.builtin.stat:
+    path: "{{ pulse_agent_binary_path }}"
+  register: pulse_agent_binary
+
+- name: Installer l'agent Pulse
+  ansible.builtin.shell: |
+    curl -fsSL {{ pulse_server_url }}/install.sh | bash -s -- \
+      --url {{ pulse_server_url }} \
+      --token {{ pulse_agent_token }} \
+      {{ pulse_agent_install_flags }}
+  args:
+    creates: "{{ pulse_agent_binary_path }}"
+  when: not pulse_agent_binary.stat.exists
+  register: pulse_agent_install_result
+
+- name: Vérifier que le service pulse-agent est démarré
+  ansible.builtin.systemd:
+    name: pulse-agent
+    state: started
+    enabled: yes
+  when: pulse_agent_install_result is changed
+
+- name: Afficher le statut de l'installation
+  ansible.builtin.debug:
+    msg:
+      - "Agent Pulse installé avec succès !"
+      - "Serveur: {{ pulse_server_url }}"
+      - "Fonctionnalités: Docker={{ pulse_agent_enable_docker }}, K8s={{ pulse_agent_enable_kubernetes }}"
+  when: pulse_agent_install_result is changed

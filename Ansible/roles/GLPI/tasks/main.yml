@@ -22,10 +22,27 @@
   ansible.builtin.set_fact:
     local_sql_names: "{{ local_sql_files.files | map(attribute='path') | map('basename') | list }}"
 
-- name: Supprimer TOUS les fichiers SQL existants dans dump/
-  ansible.builtin.shell: rm -f /srv/glpi/dump/*.sql
-  register: cleanup_old_dumps
-  changed_when: false
+- name: Lister les fichiers SQL existants sur l'hôte
+  ansible.builtin.find:
+    paths: /srv/glpi/dump
+    patterns: "*.sql"
+  register: remote_sql_files
+
+- name: Extraire les noms de fichiers SQL sur l'hôte
+  ansible.builtin.set_fact:
+    remote_sql_names: "{{ remote_sql_files.files | map(attribute='path') | map('basename') | list }}"
+
+- name: Identifier les fichiers SQL obsolètes (présents sur l'hôte mais pas dans Ansible)
+  ansible.builtin.set_fact:
+    obsolete_sql_files: "{{ remote_sql_names | difference(local_sql_names) }}"
+
+- name: Supprimer les fichiers SQL obsolètes
+  ansible.builtin.file:
+    path: "/srv/glpi/dump/{{ item }}"
+    state: absent
+  loop: "{{ obsolete_sql_files }}"
+  register: obsolete_cleanup
+  when: obsolete_sql_files | length > 0
 
 - name: Copier les fichiers SQL d'initialisation
   ansible.builtin.copy:
@@ -35,9 +52,9 @@
   loop: "{{ local_sql_files.files }}"
   register: dump_copy
 
-- name: Détecter si le dump a changé
+- name: Détecter si le dump a changé (nouveaux fichiers ou fichiers obsolètes supprimés)
   ansible.builtin.set_fact:
-    dump_sync_changed: "{{ dump_copy.changed }}"
+    dump_sync_changed: "{{ dump_copy.changed or (obsolete_cleanup.changed | default(false)) }}"
 
 - name: Déployer le docker-compose.yml
   ansible.builtin.template:

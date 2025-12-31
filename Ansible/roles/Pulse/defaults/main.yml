@@ -1,0 +1,38 @@
+# Pulse Configuration
+pulse_version: "5.0"
+pulse_container_name: "pulse"
+pulse_frontend_port: "7655"
+pulse_backend_port: "3000"
+
+# Pulse Authentication
+pulse_auth_user: "pulse"
+pulse_auth_pass: "Formation13@"
+
+# Pulse System Settings
+pulse_log_level: "info"
+pulse_log_format: "auto"
+pulse_pve_polling_interval: "10"
+pulse_pbs_polling_interval: "60"
+pulse_pmg_polling_interval: "60"
+pulse_enable_backup_polling: "true"
+pulse_enable_temperature_monitoring: "true"
+pulse_adaptive_polling_enabled: "false"
+
+# Pulse Discovery
+pulse_discovery_enabled: "true"
+pulse_demo_mode: "false"
+
+# HTTPS/TLS (désactivé par défaut)
+pulse_https_enabled: "false"
+# pulse_tls_cert_file: "/data/cert.pem"
+# pulse_tls_key_file: "/data/key.pem"
+
+# Metrics Retention (heures/jours)
+pulse_metrics_retention_raw_hours: "24"
+pulse_metrics_retention_minute_hours: "168"
+pulse_metrics_retention_hourly_days: "90"
+pulse_metrics_retention_daily_days: "730"
+
+# Génération du token pour les agents
+pulse_create_agent_token: true
+pulse_agent_token_name: "infrastructure-agents"
