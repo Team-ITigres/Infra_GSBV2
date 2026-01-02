@@ -1,14 +1,14 @@
-#!/bin/bash
+# #!/bin/bash
 
-set -e
+# set -e
 
-# === VERIFICATION ARGUMENT ===
-if [ "$1" != "full" ]; then
-  apt install figlet -y
-  figlet -f banner "debrouille toi"
-  figlet -f banner "tie pas un tigre"
-  exit 1
-fi
+# # === VERIFICATION ARGUMENT ===
+# if [ "$1" != "full" ]; then
+#   apt install figlet -y
+#   figlet -f banner "debrouille toi"
+#   figlet -f banner "tie pas un tigre"
+#   exit 1
+# fi
 
 # === CONFIG ===
 CTID=110
@@ -47,21 +47,43 @@ if [ ! -f /var/lib/vz/dump/$NOM_WINSRV_Backup ]; then
 else
   echo "[!] Backup déjà présente"
 fi
- 
+
+# 2) Vérifier si le template existe et s'il utilise le même fichier de backup
+NEED_RESTORE=true
 if qm status 2000 &>/dev/null; then
+  echo "[+] Template Windows existant détecté (VM 2000)"
+  # Récupérer la description de la VM pour voir quel backup a été utilisé
+  CURRENT_BACKUP=$(qm config 2000 | grep "^description:" | sed 's/description: backup_source=//')
+
+  if [ "$CURRENT_BACKUP" = "$NOM_WINSRV_Backup" ]; then
+    echo "[!] Le template utilise déjà le backup $NOM_WINSRV_Backup, pas besoin de restaurer"
+    NEED_RESTORE=false
+  else
+    echo "[!] Le template utilise un backup différent ($CURRENT_BACKUP vs $NOM_WINSRV_Backup)"
+    echo "[+] Suppression du template existant..."
     qm destroy 2000 --purge
+  fi
 fi
 
+# Vérifier s'il y a un conteneur LXC avec l'ID 2000
 if pct status 2000 &>/dev/null; then
-    pct destroy 2000
+  echo "[+] Conteneur LXC 2000 détecté, suppression..."
+  pct destroy 2000
 fi
- 
-# 2) Restaurer sur le stockage voulu (ex: local-lvm) et VMID fixe (ex: 2000)
-qmrestore /var/lib/vz/dump/$NOM_WINSRV_Backup  2000 --storage local-lvm --unique 1
-qm set 2000 --name "WinTemplate"
- 
-# 3) Marquer en template
-qm template 2000
+
+# 3) Restaurer uniquement si nécessaire
+if [ "$NEED_RESTORE" = true ]; then
+  echo "[+] Restauration du template Windows depuis $NOM_WINSRV_Backup..."
+  qmrestore /var/lib/vz/dump/$NOM_WINSRV_Backup 2000 --storage local-lvm --unique 1
+  qm set 2000 --name "WinTemplate"
+  qm set 2000 --description "backup_source=$NOM_WINSRV_Backup"
+
+  echo "[+] Marquage en template..."
+  qm template 2000
+  echo "[+] Template Windows créé avec succès"
+else
+  echo "[+] Template Windows déjà à jour"
+fi
 
 # === 0. Prérequis ===
 echo "[+] Vérification/installation de jq..."
@@ -316,17 +338,13 @@ apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker
 echo "[+] Clonage du dépôt Git..."
 git clone "\$GITHUB_REPO" /Infra_GSBV2 || { echo "❌ Clone Git échoué"; exit 1; }
 
-echo "[+] Écriture du fichier .env pour Terraform..."
-cat <<EOT > /root/.env_tf
+echo "[+] Écriture du fichier .env_secret pour Terraform et Pulse..."
+cat <<EOT > /root/.env_secret
 TF_VAR_proxmox_api_url=$PM_API
 TF_VAR_proxmox_api_token_id=$TOKEN_USER!$TOKEN_NAME
 TF_VAR_proxmox_api_token=$TF_TOKEN_SECRET
 TF_VAR_target_node=$node
 TF_VAR_chemin_cttemplate=$CHEMIN_TEMPLATE
-EOT
-
-echo "[+] Écriture du fichier .env_pulse pour Pulse monitoring..."
-cat <<EOT > /root/.env_pulse
 PULSE_PROXMOX_URL=$PM_API
 PULSE_PROXMOX_TOKEN_ID=$PULSE_TOKEN_ID
 PULSE_PROXMOX_TOKEN=$PULSE_TOKEN_SECRET
@@ -343,10 +361,14 @@ terransible() {
     docker run --rm -it --network="host" \\
       -v /root/etc/ansible:/root/etc/ansible \\
       -v "\\\$PWD":/work \\
-      -v /root/.env_pulse:/root/.env_pulse:ro \\
-      -v /root/.env_pulse:/root/.env_pulse:ro \\
-      --env-file /root/.env_tf \\
+      --env-file /root/.env_secret \\
       ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
+  else
+    docker run --rm --network="host" \\
+      -v /root/etc/ansible:/root/etc/ansible \\
+      -v "\\\$PWD":/work \\
+      --env-file /root/.env_secret \\
+      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX "\\\$@"
   fi
 }
 FUNCEOF
