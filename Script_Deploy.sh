@@ -344,15 +344,9 @@ terransible() {
       -v /root/etc/ansible:/root/etc/ansible \\
       -v "\\\$PWD":/work \\
       -v /root/.env_pulse:/root/.env_pulse:ro \\
-      --env-file /root/.env_tf \\
-      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
-  else
-    docker run --rm --network="host" \\
-      -v /root/etc/ansible:/root/etc/ansible \\
-      -v "\\\$PWD":/work \\
       -v /root/.env_pulse:/root/.env_pulse:ro \\
       --env-file /root/.env_tf \\
-      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX "\\\$@"
+      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
   fi
 }
 FUNCEOF
