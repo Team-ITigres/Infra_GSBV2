@@ -54,6 +54,32 @@
     - pulse_agent_token_response.json is defined
     - pulse_agent_token_response.json.token is defined
 
+- name: Configurer le node Proxmox dans Pulse avec le token
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:{{ pulse_frontend_port }}/api/pve/nodes"
+    method: POST
+    user: "{{ pulse_auth_user }}"
+    password: "{{ pulse_auth_pass }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "{{ lookup('env', 'PULSE_PROXMOX_NODE') | default(inventory_hostname) }}"
+      url: "{{ lookup('env', 'PULSE_PROXMOX_URL') }}"
+      tokenId: "{{ lookup('env', 'PULSE_PROXMOX_TOKEN_ID') }}"
+      tokenSecret: "{{ lookup('env', 'PULSE_PROXMOX_TOKEN') }}"
+      verifySSL: false
+    status_code: [200, 201, 409]
+  when:
+    - lookup('env', 'PULSE_PROXMOX_TOKEN_ID') | default('') != ''
+    - lookup('env', 'PULSE_PROXMOX_TOKEN') | default('') != ''
+  register: pulse_node_config
+  ignore_errors: true
+
+- name: Afficher le résultat de la configuration du node
+  ansible.builtin.debug:
+    msg: "Node Proxmox configuré dans Pulse: {{ pulse_node_config.json | default('Erreur ou déjà configuré') }}"
+  when: pulse_node_config is defined
+
 - name: Afficher l'URL d'accès à Pulse
   ansible.builtin.debug:
     msg:
@@ -62,3 +88,4 @@
       - "Utilisateur: {{ pulse_auth_user }}"
       - "Note: Changez le mot de passe par défaut après la première connexion"
       - "{% if pulse_agent_token is defined %}Token pour agents: {{ pulse_agent_token }}{% endif %}"
+      - "{% if pulse_node_config.status is defined and pulse_node_config.status in [200, 201] %}Node Proxmox configuré automatiquement via token API{% endif %}"

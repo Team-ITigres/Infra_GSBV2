@@ -351,6 +351,9 @@ PULSE_PROXMOX_TOKEN=$PULSE_TOKEN_SECRET
 PULSE_PROXMOX_NODE=$node
 EOT
 
+echo "[+] Vérification du contenu du fichier .env_secret..."
+cat /root/.env_secret
+
 echo "[+] Téléchargement de l'image adminbox:0..."
 docker pull ghcr.io/leq-letigre/adminbox:0
 
