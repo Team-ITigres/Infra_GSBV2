@@ -38,7 +38,7 @@
     body_format: json
     body:
       name: "{{ pulse_agent_token_name }}"
-      scopes: ["monitoring:read", "monitoring:write"]
+      scopes: ["docker:report", "monitoring:read", "monitoring:write"]
     status_code: [200, 201]
   register: pulse_agent_token_response
   when: pulse_create_agent_token | default(true)
@@ -56,17 +56,18 @@
 
 - name: Configurer le node Proxmox dans Pulse avec le token
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:{{ pulse_frontend_port }}/api/pve/nodes"
+    url: "http://{{ ansible_host }}:{{ pulse_frontend_port }}/api/config/nodes"
     method: POST
     user: "{{ pulse_auth_user }}"
     password: "{{ pulse_auth_pass }}"
     force_basic_auth: yes
     body_format: json
     body:
+      type: "pve"
       name: "{{ lookup('env', 'PULSE_PROXMOX_NODE') | default(inventory_hostname) }}"
-      url: "{{ lookup('env', 'PULSE_PROXMOX_URL') }}"
-      tokenId: "{{ lookup('env', 'PULSE_PROXMOX_TOKEN_ID') }}"
-      tokenSecret: "{{ lookup('env', 'PULSE_PROXMOX_TOKEN') }}"
+      host: "{{ lookup('env', 'PULSE_PROXMOX_URL') }}"
+      tokenName: "{{ lookup('env', 'PULSE_PROXMOX_TOKEN_ID') }}"
+      tokenValue: "{{ lookup('env', 'PULSE_PROXMOX_TOKEN') }}"
       verifySSL: false
     status_code: [200, 201, 409]
   when:
