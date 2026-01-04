@@ -1,49 +1,81 @@
-- name: Vérifier si AdGuard existe 
-  ansible.builtin.stat:
-    path: /tmp/AdGuardHome/AdGuardHome
-  register: __adguard_check
-
-- name: Télécharger AdGuard
-  ansible.builtin.get_url:
-    url: "https://github.com/AdguardTeam/AdGuardHome/releases/latest/download/AdGuardHome_linux_amd64.tar.gz"
-    dest: /tmp/AdGuardHome.tar.gz
-    mode: "0644"
-  when: not __adguard_check.stat.exists
-
-- name: Extraire AdGuard
-  ansible.builtin.unarchive:
-    src: /tmp/AdGuardHome.tar.gz
-    dest: /tmp
-    remote_src: yes
-  when: not __adguard_check.stat.exists
-
-- name: Créer le dossier /opt/AdGuardHome
+- name: Créer le dossier AdGuard
   ansible.builtin.file:
-    path: /opt/AdGuardHome
+    path: /srv/adguard
     state: directory
-    owner: "root"
-    group: "root"
-    mode: "0755"
+    mode: '0755'
 
-- name: Déplacer le binaire dans /opt 
-  ansible.builtin.copy:
-    src: /tmp/AdGuardHome/AdGuardHome
-    dest: /opt/AdGuardHome/AdGuardHome
-    remote_src: yes
-    mode: "0755"
+- name: Créer le dossier de configuration AdGuard
+  ansible.builtin.file:
+    path: /srv/adguard/adguard-conf
+    state: directory
+    mode: '0755'
 
-- name: Copier la conf d'AdGuardHome
+- name: Déployer la configuration AdGuardHome.yaml
   ansible.builtin.template:
     src: AdGuardHome.yaml.j2
-    dest: /opt/AdGuardHome/AdGuardHome.yaml
-    owner: "root"
-    group: "root"
-    mode: "0600"
-  notify: Redémarrer AdGuard
+    dest: /srv/adguard/adguard-conf/AdGuardHome.yaml
+    mode: '0644'
+  register: adguard_config_deployed
 
-- name: Créer le service systemd 
+- name: Déployer le docker-compose.yml
   ansible.builtin.template:
-    src: adguard.service.j2
-    dest: /etc/systemd/system/AdGuardHome.service
-    mode: "0644"
-  notify: Redémarrer AdGuard
+    src: compose.yaml.j2
+    dest: /srv/adguard/compose.yaml
+    mode: '0644'
+  register: docker_compose_deployed
+
+- name: Lancer les conteneurs AdGuard
+  community.docker.docker_compose_v2:
+    project_src: /srv/adguard
+    state: present
+    recreate: "{{ 'always' if (docker_compose_deployed.changed or adguard_config_deployed.changed) else 'never' }}"
+
+# - name: Vérifier si AdGuard existe 
+#   ansible.builtin.stat:
+#     path: /tmp/AdGuardHome/AdGuardHome
+#   register: __adguard_check
+
+# - name: Télécharger AdGuard
+#   ansible.builtin.get_url:
+#     url: "https://github.com/AdguardTeam/AdGuardHome/releases/latest/download/AdGuardHome_linux_amd64.tar.gz"
+#     dest: /tmp/AdGuardHome.tar.gz
+#     mode: "0644"
+#   when: not __adguard_check.stat.exists
+
+# - name: Extraire AdGuard
+#   ansible.builtin.unarchive:
+#     src: /tmp/AdGuardHome.tar.gz
+#     dest: /tmp
+#     remote_src: yes
+#   when: not __adguard_check.stat.exists
+
+# - name: Créer le dossier /opt/AdGuardHome
+#   ansible.builtin.file:
+#     path: /opt/AdGuardHome
+#     state: directory
+#     owner: "root"
+#     group: "root"
+#     mode: "0755"
+
+# - name: Déplacer le binaire dans /opt 
+#   ansible.builtin.copy:
+#     src: /tmp/AdGuardHome/AdGuardHome
+#     dest: /opt/AdGuardHome/AdGuardHome
+#     remote_src: yes
+#     mode: "0755"
+
+# - name: Copier la conf d'AdGuardHome
+#   ansible.builtin.template:
+#     src: AdGuardHome.yaml.j2
+#     dest: /opt/AdGuardHome/AdGuardHome.yaml
+#     owner: "root"
+#     group: "root"
+#     mode: "0600"
+#   notify: Redémarrer AdGuard
+
+# - name: Créer le service systemd 
+#   ansible.builtin.template:
+#     src: adguard.service.j2
+#     dest: /etc/systemd/system/AdGuardHome.service
+#     mode: "0644"
+#   notify: Redémarrer AdGuard

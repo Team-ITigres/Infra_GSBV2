@@ -5,8 +5,11 @@
 # URL du serveur Pulse
 pulse_server_url: "http://172.16.0.5:7655"
 
-# Token d'authentification (généré par le rôle Pulse)
-# Ce token sera passé depuis le playbook via hostvars
+# Authentification Pulse (pour créer le token via API)
+pulse_auth_user: "pulse"
+pulse_auth_pass: "Formation13@"
+
+# Token d'authentification (sera créé automatiquement)
 pulse_agent_token: ""
 
 # Fonctionnalités à activer

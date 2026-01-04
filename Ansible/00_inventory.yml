@@ -1,6 +1,8 @@
-all: 
-  children: 
+all:
+  children:
     linuxs:
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
       hosts: 
         Adguard:
          ansible_host: 172.16.0.3

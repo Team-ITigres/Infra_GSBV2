@@ -40,9 +40,23 @@
       name: "{{ pulse_agent_token_name }}"
       scopes: ["docker:report", "monitoring:read", "monitoring:write"]
     status_code: [200, 201]
+    timeout: 10
   register: pulse_agent_token_response
+  until: pulse_agent_token_response.status in [200, 201]
+  retries: 3
+  delay: 5
   when: pulse_create_agent_token | default(true)
   ignore_errors: true
+
+- name: Debug - Afficher la réponse de création du token
+  ansible.builtin.debug:
+    msg: |
+      Statut de la création du token:
+      - Réponse définie: {{ pulse_agent_token_response is defined }}
+      - Statut HTTP: {{ pulse_agent_token_response.status | default('N/A') }}
+      - JSON présent: {{ pulse_agent_token_response.json is defined | default(false) }}
+      - Token présent: {{ pulse_agent_token_response.json.token is defined | default(false) if pulse_agent_token_response.json is defined else false }}
+  when: pulse_create_agent_token | default(true)
 
 - name: Stocker le token comme fact Ansible (accessible via hostvars)
   ansible.builtin.set_fact:
@@ -53,6 +67,16 @@
     - pulse_agent_token_response is defined
     - pulse_agent_token_response.json is defined
     - pulse_agent_token_response.json.token is defined
+
+- name: Avertissement si le token n'a pas pu être créé
+  ansible.builtin.debug:
+    msg: |
+      ATTENTION: Le token Pulse n'a pas pu être créé !
+      Les agents Pulse ne pourront pas être déployés sur les autres machines.
+      Vérifiez que l'API Pulse est accessible et fonctionne correctement.
+  when:
+    - pulse_create_agent_token | default(true)
+    - pulse_agent_token is not defined or pulse_agent_token == ""
 
 - name: Configurer le node Proxmox dans Pulse avec le token
   ansible.builtin.uri:

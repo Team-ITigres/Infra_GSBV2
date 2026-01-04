@@ -2,18 +2,38 @@
 ---
 # tasks file for roles/Pulse_Agent
 
-- name: Récupérer le token Pulse depuis le serveur GLPI
-  ansible.builtin.set_fact:
-    pulse_agent_token: "{{ hostvars[groups['GLPI'][0]]['pulse_agent_token'] | default('') }}"
-  when: pulse_agent_token == "" or pulse_agent_token is not defined
+- name: Créer un token API unique pour cet agent
+  ansible.builtin.uri:
+    url: "{{ pulse_server_url }}/api/security/tokens"
+    method: POST
+    user: "{{ pulse_auth_user }}"
+    password: "{{ pulse_auth_pass }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "agent-{{ inventory_hostname }}"
+      scopes: ["docker:report", "monitoring:read", "monitoring:write"]
+    status_code: [200, 201, 409]
+    timeout: 10
+  register: pulse_agent_token_response
+  until: pulse_agent_token_response.status in [200, 201, 409]
+  retries: 3
+  delay: 2
+  ignore_errors: true
 
-- name: Vérifier que le token Pulse est défini
-  ansible.builtin.assert:
-    that:
-      - pulse_agent_token is defined
-      - pulse_agent_token != ""
-    fail_msg: "Le token Pulse n'est pas défini. Assurez-vous que le rôle Pulse a été exécuté et que pulse_agent_token est passé."
-    success_msg: "Token Pulse trouvé"
+- name: Stocker le token créé
+  ansible.builtin.set_fact:
+    pulse_agent_token: "{{ pulse_agent_token_response.json.token }}"
+  when:
+    - pulse_agent_token_response is defined
+    - pulse_agent_token_response.status in [200, 201]
+    - pulse_agent_token_response.json is defined
+    - pulse_agent_token_response.json.token is defined
+
+- name: Vérifier que le token a été créé
+  ansible.builtin.fail:
+    msg: "Impossible de créer le token pour {{ inventory_hostname }}. Vérifiez que Pulse est accessible sur {{ pulse_server_url }}"
+  when: pulse_agent_token is not defined or pulse_agent_token == ""
 
 - name: Construire les flags d'installation
   ansible.builtin.set_fact:
@@ -26,15 +46,60 @@
     path: "{{ pulse_agent_binary_path }}"
   register: pulse_agent_binary
 
-- name: Installer l'agent Pulse
+- name: Vérifier si le service contient le token
   ansible.builtin.shell: |
-    curl -fsSL {{ pulse_server_url }}/install.sh | bash -s -- \
+    grep -q "\-\-token" /etc/systemd/system/pulse-agent.service
+  register: pulse_service_has_token
+  ignore_errors: true
+  changed_when: false
+  when: pulse_agent_binary.stat.exists
+
+- name: Arrêter le service pulse-agent si le token est manquant
+  ansible.builtin.systemd:
+    name: pulse-agent
+    state: stopped
+    enabled: no
+  when:
+    - pulse_agent_binary.stat.exists
+    - pulse_service_has_token.rc != 0
+  ignore_errors: true
+
+- name: Supprimer l'ancien agent si le token est manquant
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ pulse_agent_binary_path }}"
+    - /etc/systemd/system/pulse-agent.service
+  when:
+    - pulse_agent_binary.stat.exists
+    - pulse_service_has_token.rc != 0
+
+- name: Recharger systemd après suppression
+  ansible.builtin.systemd:
+    daemon_reload: yes
+  when:
+    - pulse_agent_binary.stat.exists
+    - pulse_service_has_token.rc != 0
+
+- name: Installer l'agent Pulse Docker
+  ansible.builtin.shell: |
+    curl -fsSL {{ pulse_server_url }}/install-docker-agent.sh | bash -s -- \
       --url {{ pulse_server_url }} \
-      --token {{ pulse_agent_token }} \
-      {{ pulse_agent_install_flags }}
-  args:
-    creates: "{{ pulse_agent_binary_path }}"
-  when: not pulse_agent_binary.stat.exists
+      --token {{ pulse_agent_token }}
+  when:
+    - not pulse_agent_binary.stat.exists or (pulse_service_has_token is defined and pulse_service_has_token.rc != 0)
+    - pulse_agent_enable_docker | default(false)
+  register: pulse_agent_install_result
+
+- name: Installer l'agent Pulse Host
+  ansible.builtin.shell: |
+    curl -fsSL {{ pulse_server_url }}/install-host-agent.sh | bash -s -- \
+      --url {{ pulse_server_url }} \
+      --token {{ pulse_agent_token }}
+  when:
+    - not pulse_agent_binary.stat.exists or (pulse_service_has_token is defined and pulse_service_has_token.rc != 0)
+    - not (pulse_agent_enable_docker | default(false))
   register: pulse_agent_install_result
 
 - name: Vérifier que le service pulse-agent est démarré
@@ -42,7 +107,7 @@
     name: pulse-agent
     state: started
     enabled: yes
-  when: pulse_agent_install_result is changed
+    daemon_reload: yes
 
 - name: Afficher le statut de l'installation
   ansible.builtin.debug:

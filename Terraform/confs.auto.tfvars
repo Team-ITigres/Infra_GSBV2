@@ -24,11 +24,11 @@ lxc_linux = {
     "Stack-App" = {
     lxc_id = 115
     name = "Stack-App"
-    cores = 2
-    memory = 2048
+    cores = 1
+    memory = 1024
     ipconfig0 = "172.16.0.5/24"
     gw = "172.16.0.254"
-    disk_size = 20
+    disk_size = 10
     network_bridge = "vmbr0"
     }
 

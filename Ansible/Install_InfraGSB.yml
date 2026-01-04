@@ -16,15 +16,9 @@
   roles:
     - roles/Adguard
 
-- name : Install Uptime Kuma
-  become: yes
-  hosts: Uptime_Kuma
-  roles:
-    - roles/Uptime_Kuma
-
 - name : Install GLPI et Pulse
   become: yes
-  hosts: GLPI
+  hosts: Stack-App
   roles:
     - roles/GLPI
     - roles/Pulse
@@ -32,6 +26,8 @@
 - name : Install Pulse Agents
   become: yes
   hosts: linuxs
+  vars:
+    pulse_agent_enable_docker: true
   roles:
     - roles/Pulse_Agent 
 
