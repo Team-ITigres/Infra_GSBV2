@@ -1,37 +1,36 @@
 services:
   pulse:
-    image: rcourtman/pulse:{{ pulse_version | default('latest') }}
-    container_name: {{ pulse_container_name | default('pulse') }}
+    image: rcourtman/pulse:{{ pulse_version }}
+    container_name: {{ pulse_container_name }}
     environment:
       # Authentication
-      PULSE_AUTH_USER: "{{ pulse_auth_user | default('admin') }}"
-      PULSE_AUTH_PASS: "{{ pulse_auth_pass | default('PulseAdminPassw0rd!') }}"
+      PULSE_AUTH_USER: "{{ pulse_auth_user }}"
+      PULSE_AUTH_PASS: "{{ pulse_auth_pass }}"
 
       # Ports
-      FRONTEND_PORT: {{ pulse_frontend_port | default('7655') }}
-      BACKEND_PORT: {{ pulse_backend_port | default('3000') }}
-
+      FRONTEND_PORT: {{ pulse_frontend_port }}
+      BACKEND_PORT: {{ pulse_backend_port }}
       # Logging
-      LOG_LEVEL: {{ pulse_log_level | default('info') }}
-      LOG_FORMAT: {{ pulse_log_format | default('auto') }}
+      LOG_LEVEL: {{ pulse_log_level }}
+      LOG_FORMAT: {{ pulse_log_format }}
 
       # Polling Intervals
-      PVE_POLLING_INTERVAL: {{ pulse_pve_polling_interval | default('10') }}
-      PBS_POLLING_INTERVAL: {{ pulse_pbs_polling_interval | default('60') }}
-      PMG_POLLING_INTERVAL: {{ pulse_pmg_polling_interval | default('60') }}
+      PVE_POLLING_INTERVAL: {{ pulse_pve_polling_interval }}
+      PBS_POLLING_INTERVAL: {{ pulse_pbs_polling_interval }}
+      PMG_POLLING_INTERVAL: {{ pulse_pmg_polling_interval }}
 
       # Features
-      ENABLE_BACKUP_POLLING: {{ pulse_enable_backup_polling | default('true') }}
-      ENABLE_TEMPERATURE_MONITORING: {{ pulse_enable_temperature_monitoring | default('true') }}
-      ADAPTIVE_POLLING_ENABLED: {{ pulse_adaptive_polling_enabled | default('false') }}
-      DISCOVERY_ENABLED: {{ pulse_discovery_enabled | default('false') }}
-      DEMO_MODE: {{ pulse_demo_mode | default('false') }}
+      ENABLE_BACKUP_POLLING: {{ pulse_enable_backup_polling }}
+      ENABLE_TEMPERATURE_MONITORING: {{ pulse_enable_temperature_monitoring }}
+      ADAPTIVE_POLLING_ENABLED: {{ pulse_adaptive_polling_enabled }}
+      DISCOVERY_ENABLED: {{ pulse_discovery_enabled }}
+      DEMO_MODE: {{ pulse_demo_mode }}
 
       # HTTPS (optionnel)
-{% if pulse_https_enabled | default('false') | bool %}
+{% if pulse_https_enabled | bool %}
       HTTPS_ENABLED: "true"
-      TLS_CERT_FILE: {{ pulse_tls_cert_file | default('/data/cert.pem') }}
-      TLS_KEY_FILE: {{ pulse_tls_key_file | default('/data/key.pem') }}
+      TLS_CERT_FILE: {{ pulse_tls_cert_file }}
+      TLS_KEY_FILE: {{ pulse_tls_key_file }}
 {% else %}
       HTTPS_ENABLED: "false"
 {% endif %}
