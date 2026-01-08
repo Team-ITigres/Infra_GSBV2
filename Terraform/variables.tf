@@ -45,16 +45,16 @@ variable "win_srv" {
   
 }
 
-variable "opnsenses" {
-  type = map(object({
-    name = string
-    vmid = number
-    clone_id = number
-    net0= string
-    net0_gateway = string
-    net1  = string
-    net2  = string
-    net3  = string
-  }))
+# variable "opnsenses" {
+#   type = map(object({
+#     name = string
+#     vmid = number
+#     clone_id = number
+#     net0= string
+#     net0_gateway = string
+#     net1  = string
+#     net2  = string
+#     net3  = string
+#   }))
   
-}
+# }

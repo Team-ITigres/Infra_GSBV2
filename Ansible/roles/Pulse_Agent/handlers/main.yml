@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/Pulse_Agent
+
+- name: Restart pulse-agent
+  ansible.builtin.systemd:
+    name: pulse-agent
+    state: restarted

@@ -1,0 +1,66 @@
+services:
+  pulse:
+    image: rcourtman/pulse:{{ pulse_version }}
+    container_name: {{ pulse_container_name }}
+    environment:
+      # Authentication
+      PULSE_AUTH_USER: "{{ pulse_auth_user }}"
+      PULSE_AUTH_PASS: "{{ pulse_auth_pass }}"
+
+      # Ports
+      FRONTEND_PORT: {{ pulse_frontend_port }}
+      BACKEND_PORT: {{ pulse_backend_port }}
+      # Logging
+      LOG_LEVEL: {{ pulse_log_level }}
+      LOG_FORMAT: {{ pulse_log_format }}
+
+      # Polling Intervals
+      PVE_POLLING_INTERVAL: {{ pulse_pve_polling_interval }}
+      PBS_POLLING_INTERVAL: {{ pulse_pbs_polling_interval }}
+      PMG_POLLING_INTERVAL: {{ pulse_pmg_polling_interval }}
+
+      # Features
+      ENABLE_BACKUP_POLLING: {{ pulse_enable_backup_polling }}
+      ENABLE_TEMPERATURE_MONITORING: {{ pulse_enable_temperature_monitoring }}
+      ADAPTIVE_POLLING_ENABLED: {{ pulse_adaptive_polling_enabled }}
+      DISCOVERY_ENABLED: {{ pulse_discovery_enabled }}
+      DEMO_MODE: {{ pulse_demo_mode }}
+
+      # HTTPS (optionnel)
+{% if pulse_https_enabled | bool %}
+      HTTPS_ENABLED: "true"
+      TLS_CERT_FILE: {{ pulse_tls_cert_file }}
+      TLS_KEY_FILE: {{ pulse_tls_key_file }}
+{% else %}
+      HTTPS_ENABLED: "false"
+{% endif %}
+
+      # Timezone
+      TZ: Europe/Paris
+
+    volumes:
+      # Persistance des données (config, db SQLite, fichiers chiffrés)
+      - pulse-data:/data
+
+    ports:
+      - "{{ pulse_frontend_port | default('7655') }}:{{ pulse_frontend_port | default('7655') }}"
+
+    networks:
+      - app-external
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:{{ pulse_frontend_port | default('7655') }}/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  pulse-data:
+
+networks:
+  app-external:
+    external: true
+    name: app-external

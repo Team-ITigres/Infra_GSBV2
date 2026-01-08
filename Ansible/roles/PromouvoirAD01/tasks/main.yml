@@ -54,3 +54,18 @@
     enabled: true
     description: "Compte de service pour la synchronisation LDAP de GLPI"
   register: glpi_bind_creation
+
+- name: Créer le compte de service Mail pour LDAP
+  microsoft.ad.user:
+    name: mail_bind
+    firstname: Mail
+    surname: Service Account
+    upn: mail_bind@gsb.local
+    password: "{{ mail_ldap_password | default('Formation13@') }}"
+    state: present
+    path: "OU=Comptes_Services,DC=gsb,DC=local"
+    password_never_expires: true
+    user_cannot_change_password: true
+    enabled: true
+    description: "Compte de service pour l'authentification LDAP du serveur mail"
+  register: mail_bind_creation

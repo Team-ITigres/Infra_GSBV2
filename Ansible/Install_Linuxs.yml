@@ -1,0 +1,39 @@
+- name: Update 
+  hosts: linuxs
+  become: yes
+  roles: 
+    - roles/MAJ  
+
+- name: Install Docker
+  become: yes
+  hosts: linuxs
+  roles:
+    - roles/Install_Docker
+
+- name : Install AdGuard
+  become: yes
+  hosts: Adguard
+  roles:
+    - roles/Adguard
+
+- name : Install GLPI et Pulse
+  become: yes
+  hosts: Stack-App
+  roles:
+    - roles/GLPI
+    - roles/Pulse
+
+- name: Install Dockermail 
+  become: yes
+  hosts: Dockermail
+  roles:
+    - roles/Dockermail
+    - roles/Roundcube
+
+- name : Install Pulse Agents
+  become: yes
+  hosts: linuxs
+  vars:
+    pulse_agent_enable_docker: true
+  roles:
+    - roles/Pulse_Agent

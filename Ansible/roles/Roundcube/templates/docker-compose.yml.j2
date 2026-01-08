@@ -1,0 +1,27 @@
+services:
+  roundcube:
+    image: roundcube/roundcubemail:{{ roundcube_version }}
+    container_name: {{ roundcube_container_name }}
+    network_mode: host
+    environment:
+      - ROUNDCUBEMAIL_DEFAULT_HOST=localhost
+      - ROUNDCUBEMAIL_DEFAULT_PORT={{ roundcube_imap_port }}
+      - ROUNDCUBEMAIL_SMTP_SERVER=localhost
+      - ROUNDCUBEMAIL_SMTP_PORT={{ roundcube_smtp_port }}
+      - ROUNDCUBEMAIL_DB_TYPE={{ roundcube_db_type }}
+      - ROUNDCUBEMAIL_PRODUCT_NAME={{ roundcube_product_name }}
+      - ROUNDCUBEMAIL_DES_KEY={{ roundcube_des_key }}
+      - ROUNDCUBEMAIL_PLUGINS={{ roundcube_plugins }}
+      - ROUNDCUBEMAIL_LANGUAGE={{ roundcube_language }}
+      - TZ={{ roundcube_timezone }}
+      - ROUNDCUBEMAIL_UPLOAD_MAX_FILESIZE=25M
+      - ROUNDCUBEMAIL_SKIN=elastic
+      - APACHE_HTTP_PORT={{ roundcube_port }}
+    volumes:
+      - roundcube-db:/var/roundcube/db
+      - roundcube-config:/var/roundcube/config
+    restart: unless-stopped
+
+volumes:
+  roundcube-db:
+  roundcube-config:

@@ -1,5 +1,2 @@
 ---
-- name: Redémarrer GLPI
-  community.docker.docker_compose_v2:
-    project_src: /opt/glpi
-    state: restarted
+# Handlers pour GLPI (vide pour l'instant)

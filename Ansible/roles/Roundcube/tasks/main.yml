@@ -1,0 +1,39 @@
+---
+- name: Créer le dossier Roundcube
+  ansible.builtin.file:
+    path: /srv/roundcube
+    state: directory
+    mode: '0755'
+
+- name: Déployer le docker-compose.yml pour Roundcube
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /srv/roundcube/docker-compose.yml
+    mode: '0644'
+  register: roundcube_docker_compose_deployed
+
+- name: Lancer le conteneur Roundcube
+  community.docker.docker_compose_v2:
+    project_src: /srv/roundcube
+    state: present
+    recreate: "{{ 'always' if roundcube_docker_compose_deployed.changed else 'never' }}"
+
+- name: Attendre que Roundcube soit complètement démarré
+  ansible.builtin.uri:
+    url: "http://localhost:{{ roundcube_port }}"
+    status_code: 200
+    timeout: 5
+  register: roundcube_health_check
+  until: roundcube_health_check.status == 200
+  retries: 12
+  delay: 5
+
+- name: Afficher les informations de connexion
+  ansible.builtin.debug:
+    msg:
+      - "Roundcube Webmail est déployé avec succès !"
+      - "URL d'accès: http://{{ ansible_host }}:{{ roundcube_port }}"
+      - "Serveur IMAP: {{ roundcube_default_host }}:{{ roundcube_imap_port }}"
+      - "Serveur SMTP: {{ roundcube_smtp_server }}:{{ roundcube_smtp_port }}"
+      - "Connectez-vous avec vos identifiants Active Directory"
+      - "Format utilisateur: utilisateur@gsb.local"

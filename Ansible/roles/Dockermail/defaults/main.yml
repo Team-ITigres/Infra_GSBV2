@@ -1,0 +1,45 @@
+---
+# Docker Mailserver Configuration
+dockermail_version: "15.1"
+dockermail_container_name: "mailserver"
+dockermail_hostname: "mail"
+dockermail_domainname: "gsb.local"
+
+# Ports
+dockermail_smtp_port: "25"
+dockermail_submission_port: "587"
+dockermail_submissions_port: "465"
+dockermail_imap_port: "143"
+dockermail_imaps_port: "993"
+
+# LDAP Configuration
+ldap_enabled: true
+ldap_server_host: "ldap://172.16.0.1"  # WinSRV01 IP
+ldap_search_base: "DC=gsb,DC=local"
+ldap_bind_dn: "CN=mail_bind,OU=Comptes_Services,DC=gsb,DC=local"
+ldap_bind_password: "Formation13@"
+ldap_start_tls: "no"
+
+# LDAP Query Filters (Active Directory compatible)
+ldap_query_filter_user: "(&(objectClass=user)(!(objectClass=computer))(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=%s))"
+ldap_query_filter_group: "(&(objectClass=group)(mail=%s))"
+ldap_query_filter_alias: "(&(objectClass=user)(!(objectClass=computer))(proxyAddresses=smtp:%s))"
+ldap_query_filter_domain: "(mail=*@%s)"
+
+# Account Provisioning
+account_provisioner: "LDAP"
+
+# SSL/TLS Configuration (letsencrypt, manual, self-signed, ou vide pour désactiver)
+ssl_type: ""  # Désactivé pour usage local
+
+# Spoof Protection
+spoof_protection: "0"  # Désactivé pour usage interne
+
+# One Directory
+one_dir: "1"
+
+# Log Level
+log_level: "info"
+
+# Timezone
+timezone: "Europe/Paris"

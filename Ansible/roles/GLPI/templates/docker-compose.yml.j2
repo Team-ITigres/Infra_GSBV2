@@ -1,65 +1,64 @@
 services:
-  glpi_db:
-    image: mariadb:{{ mariadb_version }}
-    container_name: glpi_db
-    restart: unless-stopped
+  mariadb:
+    image: mariadb:{{ mariadb_version | default('latest') }}
+    container_name: {{ mariadb_container_name | default('mariadb') }}
     environment:
-      MYSQL_ROOT_PASSWORD: {{ glpi_mysql_root_password }}
-      MYSQL_DATABASE: {{ glpi_mysql_db }}
-      MYSQL_USER: {{ glpi_mysql_user }}
-      MYSQL_PASSWORD: {{ glpi_mysql_password }}
+      MYSQL_ROOT_PASSWORD: {{ mariadb_root_password | default('rootpassword') }}
+      MYSQL_DATABASE: {{ mariadb_database | default('glpi') }}
+      MYSQL_USER: {{ mariadb_user | default('glpi') }}
+      MYSQL_PASSWORD: {{ mariadb_password | default('glpipassword') }}
     volumes:
-      - glpi_db_data:/var/lib/mysql
+      - mariadb-data:/var/lib/mysql
+      - ./dump:/docker-entrypoint-initdb.d:ro
     networks:
-      - glpi_net
+      - glpi-internal
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 60s
-      start_interval: 10s
-      interval: 30s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p{{ mariadb_root_password }}"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
 
   glpi:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: glpi-custom:{{ glpi_version }}
-    container_name: glpi
-    restart: unless-stopped
-    ports:
-      - "{{ glpi_port }}:80"
+    image: glpi/glpi:{{ glpi_version | default('latest') }}
+    container_name: {{ glpi_container_name | default('glpi') }}
     environment:
-      GLPI_DB_HOST: glpi_db
-      GLPI_DB_PORT: 3306
-      GLPI_DB_NAME: {{ glpi_mysql_db }}
-      GLPI_DB_USER: {{ glpi_mysql_user }}
-      GLPI_DB_PASSWORD: {{ glpi_mysql_password }}
-      TIMEZONE: {{ glpi_timezone }}
+      # Configuration de la base de données
+      GLPI_DB_HOST: {{ glpi_db_host | default('mariadb') }}
+      GLPI_DB_NAME: {{ glpi_db_name | default('glpi') }}
+      GLPI_DB_USER: {{ glpi_db_user | default('glpi') }}
+      GLPI_DB_PASSWORD: {{ glpi_db_password | default('glpipassword') }}
+
+      # Mode installation/update automatique
+      GLPI_INSTALL_PLUGINS: ""
+
+      # Timezone
+      TZ: Europe/Paris
     volumes:
-      - glpi_config:/var/www/html/config
-      - glpi_files:/var/www/html/files
-      - glpi_marketplace:/var/www/html/marketplace
-      - glpi_plugins:/var/www/html/plugins
-    depends_on:
-      glpi_db:
-        condition: service_healthy
+      # Persistance des fichiers importants sur /var/glpi (utilisé par l'image officielle)
+      - glpi-files:/var/glpi/files
+      - glpi-config:/var/glpi/config
+      - glpi-marketplace:/var/glpi/marketplace
+    ports:
+      - "80:80"
     networks:
-      - glpi_net
+      - glpi-internal
+      - app-external
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  glpi_db_data:
-    name: glpi_db_data
-  glpi_config:
-    name: glpi_config
-  glpi_files:
-    name: glpi_files
-  glpi_marketplace:
-    name: glpi_marketplace
-  glpi_plugins:
-    name: glpi_plugins
+  mariadb-data:
+  glpi-files:
+  glpi-config:
+  glpi-marketplace:
 
 networks:
-  glpi_net:
-    name: glpi_net
+  glpi-internal:
     driver: bridge
+    internal: true
+  app-external:
+    driver: bridge
+    name: app-external

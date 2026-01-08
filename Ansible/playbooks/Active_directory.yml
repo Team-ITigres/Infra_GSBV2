@@ -38,6 +38,7 @@
         upn: "{{ item.username }}@gsb.local"
         firstname: "{{ item.firstname }}"
         surname: "{{ item.lastname }}"
+        email: "{{ item.email }}"
         password: "{{ item.password }}"
         enabled: yes
         path: "OU={{ ou_name }},{{ ou_path }}"

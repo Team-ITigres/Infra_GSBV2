@@ -1,0 +1,9 @@
+- name : Promouvoir l'AD
+  hosts: WinSRV01
+  roles:
+    - roles/PromouvoirAD01
+
+- name: ReplicationAD02
+  hosts: WinSRV02
+  roles:
+    - roles/ReplicationAD02

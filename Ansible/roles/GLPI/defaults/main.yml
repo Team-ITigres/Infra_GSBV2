@@ -1,44 +1,16 @@
 ---
-# GLPI Version Configuration
-glpi_version: "11.0.2"
-glpi_port: "80"
-glpi_timezone: "Europe/Paris"
+# MariaDB Configuration
+mariadb_version: "10.7"
+mariadb_root_password: "StrongRootPassw0rd!"
+mariadb_database: "glpi"
+mariadb_user: "glpi_user"
+mariadb_password: "GlpiUserPassw0rd!"
+mariadb_container_name: "mariadb"
 
-# MariaDB Version
-mariadb_version: "11.0"
-
-# Database Configuration
-glpi_mysql_root_password: "Formation13@"
-glpi_mysql_db: "glpi"
-glpi_mysql_user: "glpi"
-glpi_mysql_password: "Formation13@"
-
-# GLPI Initial Admin Account (pour première connexion)
-glpi_admin_user: "glpi"
-glpi_admin_password: "Formation13@"
-
-# LDAP Configuration (optionnel - mettre glpi_ldap_enabled: true pour activer)
-glpi_ldap_enabled: true
-glpi_ldap_name: "Active Directory GSB"
-glpi_ldap_host: "172.16.0.1"
-glpi_ldap_port: 389
-glpi_ldap_basedn: "DC=gsb,DC=local"
-# Utilise le compte de service glpi_bind créé par le rôle PromouvoirAD01
-glpi_ldap_rootdn: "CN=glpi_bind,OU=Comptes_Services,DC=gsb,DC=local"
-glpi_ldap_password: "Formation13@"
-glpi_ldap_use_tls: false
-glpi_ldap_use_bind: true
-glpi_ldap_login_field: "samaccountname"
-glpi_ldap_sync_field: "objectguid"
-glpi_ldap_email_field: "mail"
-glpi_ldap_realname_field: "sn"
-glpi_ldap_firstname_field: "givenname"
-glpi_ldap_phone_field: "telephonenumber"
-glpi_ldap_title_field: "title"
-glpi_ldap_condition: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(!(samaccountname=glpi_bind))(!(samaccountname=Administrateur)))"
-glpi_ldap_group_field: "memberof"
-glpi_ldap_group_condition: "(objectClass=group)"
-
-# Backup Configuration
-glpi_backup_enabled: false
-glpi_backup_retention_days: 7
+# GLPI Configuration
+glpi_version: "11.0.4"
+glpi_container_name: "glpi"
+glpi_db_host: "mariadb"
+glpi_db_name: "glpi"
+glpi_db_user: "glpi_user"
+glpi_db_password: "GlpiUserPassw0rd!"
