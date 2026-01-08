@@ -36,7 +36,7 @@ PULSE_USER="pulse-monitor@pam"
 PULSE_TOKEN_NAME="pulse-token"
 GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
 START_TIME=$(date +%s)
-TAG_ADMINBOX="0"
+TAG_ADMINBOX="0.1"
 NOM_WINSRV_Backup="vzdump-qemu-101-2025_09_13-14_41_02.vma.zst"
 
 # 1) Télécharger la backup du win srv 2022
@@ -404,7 +404,7 @@ cd /Infra_GSBV2/Ansible
 terransible ansible-galaxy install -r requirements.yml --force
 
 echo "[+] Exécution du playbook Ansible..."
-terransible ansible-playbook Install_InfraGSB.yml
+terransible tmux new "ansible-playbook Install_Linuxs.yml" \; split -h "ansible-playbook Install_Windows.yml"
 
 EOF
 
