@@ -404,7 +404,7 @@ cd /Infra_GSBV2/Ansible
 terransible ansible-galaxy install -r requirements.yml --force
 
 echo "[+] Exécution du playbook Ansible..."
-terransible tmux new "ansible-playbook Install_Linuxs.yml" \; split -h "ansible-playbook Install_Windows.yml"
+terransible tmux new "ansible-playbook Install_Linuxs.yml" \; split -v "ansible-playbook Install_Windows.yml"
 
 EOF
 
