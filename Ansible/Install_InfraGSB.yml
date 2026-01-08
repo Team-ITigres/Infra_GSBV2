@@ -23,6 +23,13 @@
     - roles/GLPI
     - roles/Pulse
 
+- name: Install Dockermail 
+  become: yes
+  hosts: Dockermail
+  roles:
+    - roles/Dockermail
+    - roles/Roundcube
+
 - name : Install Pulse Agents
   become: yes
   hosts: linuxs

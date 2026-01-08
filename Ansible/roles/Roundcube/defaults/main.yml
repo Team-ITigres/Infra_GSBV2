@@ -1,0 +1,27 @@
+---
+# Roundcube Webmail Configuration
+roundcube_version: "latest-apache"
+roundcube_container_name: "roundcube"
+roundcube_port: "80"
+
+# Database Configuration (SQLite par défaut, simple pour usage local)
+roundcube_db_type: "sqlite"
+
+# Mail Server Configuration (connexion au conteneur docker-mailserver)
+roundcube_default_host: "172.16.0.6"  # IP du LXC Dockermail
+roundcube_imap_port: "143"
+roundcube_smtp_server: "172.16.0.6"
+roundcube_smtp_port: "587"
+
+# Roundcube Settings
+roundcube_product_name: "GSB Webmail"
+roundcube_des_key: "rcmail_GSB_24ByteDESkey!"  # Clé de chiffrement DES
+
+# Timezone
+roundcube_timezone: "Europe/Paris"
+
+# Langue par défaut
+roundcube_language: "fr_FR"
+
+# Plugins à activer
+roundcube_plugins: "archive,zipdownload"

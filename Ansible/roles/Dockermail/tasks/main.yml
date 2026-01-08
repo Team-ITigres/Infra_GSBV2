@@ -1,0 +1,65 @@
+---
+- name: Arrêter Postfix s'il est en cours d'exécution
+  ansible.builtin.systemd:
+    name: postfix
+    state: stopped
+  ignore_errors: true
+
+- name: Désactiver Postfix au démarrage
+  ansible.builtin.systemd:
+    name: postfix
+    enabled: false
+  ignore_errors: true
+
+- name: Créer le dossier Dockermail
+  ansible.builtin.file:
+    path: /srv/dockermail
+    state: directory
+    mode: '0755'
+
+- name: Créer le dossier de configuration Dockermail
+  ansible.builtin.file:
+    path: /srv/dockermail/config
+    state: directory
+    mode: '0755'
+
+- name: Déployer le fichier d'environnement mailserver.env
+  ansible.builtin.template:
+    src: mailserver.env.j2
+    dest: /srv/dockermail/mailserver.env
+    mode: '0600'
+  register: mailserver_env_deployed
+
+- name: Déployer le docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /srv/dockermail/docker-compose.yml
+    mode: '0644'
+  register: docker_compose_deployed
+
+- name: Lancer le conteneur Dockermail
+  community.docker.docker_compose_v2:
+    project_src: /srv/dockermail
+    state: present
+    recreate: "{{ 'always' if (docker_compose_deployed.changed or mailserver_env_deployed.changed) else 'never' }}"
+
+- name: Attendre que le mailserver soit complètement démarré
+  ansible.builtin.wait_for:
+    port: "{{ dockermail_smtp_port }}"
+    host: localhost
+    delay: 10
+    timeout: 60
+  register: mailserver_ready
+
+- name: Afficher les informations de connexion
+  ansible.builtin.debug:
+    msg:
+      - "Docker Mailserver est déployé avec succès !"
+      - "Hostname: {{ dockermail_hostname }}.{{ dockermail_domainname }}"
+      - "SMTP: {{ ansible_host }}:{{ dockermail_smtp_port }}"
+      - "SMTP Submission: {{ ansible_host }}:{{ dockermail_submission_port }}"
+      - "SMTP Submissions (TLS): {{ ansible_host }}:{{ dockermail_submissions_port }}"
+      - "IMAP: {{ ansible_host }}:{{ dockermail_imap_port }}"
+      - "IMAPS (TLS): {{ ansible_host }}:{{ dockermail_imaps_port }}"
+      - "Authentication: LDAP via Active Directory ({{ ldap_server_host }})"
+      - "Les utilisateurs peuvent se connecter avec leurs identifiants AD"

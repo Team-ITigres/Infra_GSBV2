@@ -1,0 +1,25 @@
+services:
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:{{ dockermail_version }}
+    container_name: {{ dockermail_container_name }}
+    hostname: {{ dockermail_hostname }}.{{ dockermail_domainname }}
+    network_mode: host
+    env_file: mailserver.env
+    volumes:
+      - maildata:/var/mail
+      - mailstate:/var/mail-state
+      - maillogs:/var/log/mail
+      - ./config:/tmp/docker-mailserver
+    restart: unless-stopped
+    stop_grace_period: 1m
+    cap_add:
+      - NET_ADMIN
+    healthcheck:
+      test: ["CMD", "ss", "--listening", "--tcp", "-n", "-H", "|", "grep", "-E", ":25|:587|:465|:143|:993"]
+      timeout: 3s
+      retries: 0
+
+volumes:
+  maildata:
+  mailstate:
+  maillogs:
