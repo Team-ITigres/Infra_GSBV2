@@ -176,19 +176,6 @@ fi
 echo "[+] Création du conteneur LXC '$CTNAME' avec IP $IP_SETUP..."
 pct destroy $CTID 2>/dev/null || true
 
-<<<<<<< HEAD
-pct create $CTID "$LXC_TEMPLATE" \
-  -hostname $HOSTNAME \
-  -cores 4 \
-  -memory 4096 \
-  -net0 name=eth0,bridge=$BRIDGE,ip=$IP_SETUP,gw=$GW \
-  -net1 name=eth1,bridge=vmbr2,ip=10.10.0.10/28,gw=10.10.0.1 \
-  -storage local-lvm \
-  -rootfs local-lvm:8 \
-  -features nesting=1 \
-  -password Formation13@ \
-  -unprivileged 0 \
-=======
 echo "[+] Exécution de la commande pct create..."
 pct create $CTID "$CHEMIN_TEMPLATE" \
   --hostname $HOSTNAME \
@@ -202,7 +189,6 @@ pct create $CTID "$CHEMIN_TEMPLATE" \
   --password Formation13@ \
   --unprivileged 0
 
->>>>>>> Dev_LeQ
 echo "[+] Démarrage du conteneur..."
 pct start $CTID
 
