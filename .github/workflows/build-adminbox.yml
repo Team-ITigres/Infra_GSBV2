@@ -1,0 +1,41 @@
+name: Build and Deploy Adminbox
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout only Dockerfile
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Dockerfile
+          sparse-checkout-cone-mode: false
+
+      - name: Build Docker Image
+        run: |
+          docker build -t adminbox:latest .
+
+      - name: Save Docker Image to tar
+        run: |
+          docker save adminbox:latest -o adminbox-latest.tar
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ${{ runner.temp }}/.ssh
+          echo "${{ secrets.M2SHELPER_CLE }}" > ${{ runner.temp }}/.ssh/deploy_key
+          chmod 600 ${{ runner.temp }}/.ssh/deploy_key
+
+      - name: Deploy adminbox tar via SCP
+        run: |
+          scp -i ${{ runner.temp }}/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            adminbox-latest.tar \
+            root@${{ secrets.M2SHELPER_IP }}:/var/www/html/scripts/deploy-infra-gsb/adminbox-latest.tar
