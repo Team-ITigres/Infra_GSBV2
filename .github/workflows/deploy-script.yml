@@ -11,13 +11,12 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
+      - name: Checkout only Script_Deploy.sh
         uses: actions/checkout@v4
-
-      - name: Debug - List files
-        run: |
-          pwd
-          ls -la
+        with:
+          sparse-checkout: |
+            Script_Deploy.sh
+          sparse-checkout-cone-mode: false
 
       - name: Setup SSH Key
         run: |
