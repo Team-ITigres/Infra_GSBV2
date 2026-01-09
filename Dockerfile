@@ -56,5 +56,3 @@ RUN mkdir -p /work /root/.ssh
 WORKDIR /work
 
 CMD ["bash"]
-
-# test
