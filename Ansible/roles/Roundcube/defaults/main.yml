@@ -2,7 +2,7 @@
 # Roundcube Webmail Configuration
 roundcube_version: "latest-apache"
 roundcube_container_name: "roundcube"
-roundcube_port: "80"
+roundcube_port: "8082"
 
 # Database Configuration (SQLite par défaut, simple pour usage local)
 roundcube_db_type: "sqlite"

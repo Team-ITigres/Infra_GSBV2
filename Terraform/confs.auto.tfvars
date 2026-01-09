@@ -42,6 +42,17 @@ lxc_linux = {
     disk_size = 20
     network_bridge = "vmbr0"
     }
+
+    "SFTPGO" = {
+    lxc_id = 120
+    name = "SFTPGO"
+    cores = 2
+    memory = 2048
+    ipconfig0 = "172.16.69.2/29"
+    gw = "172.16.69.1"
+    disk_size = 20
+    network_bridge = "DMZ"
+    }
 }
 
 win_srv = {

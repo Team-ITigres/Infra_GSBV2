@@ -69,3 +69,18 @@
     enabled: true
     description: "Compte de service pour l'authentification LDAP du serveur mail"
   register: mail_bind_creation
+
+- name: Créer le compte de service SFTPGO pour LDAP
+  microsoft.ad.user:
+    name: sftpgo_bind
+    firstname: SFTPGO
+    surname: Service Account
+    upn: sftpgo_bind@gsb.local
+    password: "{{ sftpgo_ldap_password | default('Formation13@') }}"
+    state: present
+    path: "OU=Comptes_Services,DC=gsb,DC=local"
+    password_never_expires: true
+    user_cannot_change_password: true
+    enabled: true
+    description: "Compte de service pour l'authentification LDAP de SFTPGO"
+  register: sftpgo_bind_creation

@@ -30,6 +30,12 @@
     - roles/Dockermail
     - roles/Roundcube
 
+- name: Install SFTPGO
+  become: yes
+  hosts: SFTPGO
+  roles:
+    - roles/SFTPGO
+
 - name : Install Pulse Agents
   become: yes
   hosts: linuxs

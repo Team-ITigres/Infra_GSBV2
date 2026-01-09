@@ -23,12 +23,12 @@ service: "icmp"
 description: "Blocage ICMP depuis eth3 vers VLAN 300"
 
 nat_rule: "oui"
-nat_description: "HTTPS VLAN Marketing vers GLPI"
-nat_source_network: "192.168.150.0/27"
-nat_destination_ip: "192.168.150.30"
-nat_destination_port: "8443"
-nat_forward_to_ip: "172.16.0.5"
-nat_forward_to_port: "443"
+nat_description: "Acces SFTPGO"
+nat_source_network: "172.16.0.0/24"
+nat_destination_ip: "172.16.0.254"
+nat_destination_port: "8080"
+nat_forward_to_ip: "172.16.69.2"
+nat_forward_to_port: "8080"
 
 users:
   - firstname: "Julien"

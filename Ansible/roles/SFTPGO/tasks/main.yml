@@ -1,0 +1,59 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/SFTPGO
+
+- name: Créer le dossier SFTPGO
+  ansible.builtin.file:
+    path: /srv/sftpgo
+    state: directory
+    owner: "{{ sftpgo_uid }}"
+    group: "{{ sftpgo_gid }}"
+    mode: '0755'
+
+- name: Créer le dossier de données SFTPGO
+  ansible.builtin.file:
+    path: /srv/sftpgo/data
+    state: directory
+    owner: "{{ sftpgo_uid }}"
+    group: "{{ sftpgo_gid }}"
+    mode: '0755'
+
+- name: Créer le dossier de configuration SFTPGO
+  ansible.builtin.file:
+    path: /srv/sftpgo/config
+    state: directory
+    owner: "{{ sftpgo_uid }}"
+    group: "{{ sftpgo_gid }}"
+    mode: '0755'
+
+- name: Déployer le docker-compose.yml pour SFTPGO
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /srv/sftpgo/docker-compose.yml
+    mode: '0644'
+  register: sftpgo_docker_compose_deployed
+
+- name: Lancer le conteneur SFTPGO
+  community.docker.docker_compose_v2:
+    project_src: /srv/sftpgo
+    state: present
+    recreate: "{{ 'always' if sftpgo_docker_compose_deployed.changed else 'never' }}"
+
+- name: Attendre que SFTPGO soit complètement démarré
+  ansible.builtin.uri:
+    url: "http://localhost:{{ sftpgo_webadmin_port }}/healthz"
+    status_code: 200
+    timeout: 5
+  register: sftpgo_health_check
+  until: sftpgo_health_check.status == 200
+  retries: 12
+  delay: 5
+
+- name: Afficher les informations de connexion
+  ansible.builtin.debug:
+    msg:
+      - "SFTPGO est déployé avec succès !"
+      - "URL d'accès Web Admin: http://{{ ansible_host }}:{{ sftpgo_webadmin_port }}/web/admin"
+      - "Port SFTP: {{ sftpgo_sftp_port }}"
+      - "Connectez-vous à l'interface Web Admin pour créer le premier compte administrateur"
+      - "Répertoire de données: /srv/sftpgo/data"

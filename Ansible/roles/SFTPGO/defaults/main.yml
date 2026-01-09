@@ -1,0 +1,39 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/SFTPGO
+
+# SFTPGO Configuration
+sftpgo_version: "v2.7-plugins"
+sftpgo_container_name: "sftpgo"
+
+# Ports Configuration
+sftpgo_webadmin_port: "8080"
+sftpgo_sftp_port: "2022"
+
+# Timezone
+sftpgo_timezone: "Europe/Paris"
+
+# Grace time for graceful shutdown (in seconds)
+sftpgo_grace_time: "30"
+
+# User/Group IDs (default to 1000:1000)
+sftpgo_uid: "1000"
+sftpgo_gid: "1000"
+
+# LDAP Configuration
+ldap_enabled: true
+ldap_url: "ldap://172.16.0.1:389"  # WinSRV01 IP
+ldap_base_dn: "DC=gsb,DC=local"
+ldap_bind_dn: "CN=sftpgo_bind,OU=Comptes_Services,DC=gsb,DC=local"
+ldap_bind_password: "Formation13@"
+ldap_start_tls: "0"  # 0 = disabled, 1 = enabled
+
+# LDAP Search Query (Active Directory compatible)
+# %username% sera remplacé par le nom d'utilisateur lors de l'authentification
+ldap_search_query: "(&(objectClass=user)(sAMAccountType=805306368)(sAMAccountName=%username%))"
+
+# LDAP Group Attributes
+ldap_group_attributes: "memberOf"
+
+# Cache time for authenticated users (in seconds, 0 = no cache)
+ldap_cache_time: "300"

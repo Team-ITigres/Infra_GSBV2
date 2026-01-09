@@ -41,7 +41,7 @@ services:
       - glpi-config:/var/glpi/config
       - glpi-marketplace:/var/glpi/marketplace
     ports:
-      - "80:80"
+      - "8081:80"
     networks:
       - glpi-internal
       - app-external

@@ -1,0 +1,37 @@
+services:
+  sftpgo:
+    image: drakkan/sftpgo:{{ sftpgo_version }}
+    container_name: {{ sftpgo_container_name }}
+    network_mode: host
+    user: "{{ sftpgo_uid }}:{{ sftpgo_gid }}"
+    environment:
+      - TZ={{ sftpgo_timezone }}
+      - SFTPGO_GRACE_TIME={{ sftpgo_grace_time }}
+      - SFTPGO_HTTPD__BIND_PORT={{ sftpgo_webadmin_port }}
+      - SFTPGO_SFTPD__BINDINGS__0__PORT={{ sftpgo_sftp_port }}
+      - SFTPGO_SFTPD__KEYBOARD_INTERACTIVE_AUTHENTICATION=false
+{% if ldap_enabled %}
+      # LDAP Authentication Plugin
+      - SFTPGO_PLUGINS__0__TYPE=auth
+      - SFTPGO_PLUGINS__0__CMD=/usr/local/bin/sftpgo-plugin-auth
+      - SFTPGO_PLUGINS__0__ARGS=serve
+      - SFTPGO_PLUGINS__0__AUTO_MTLS=1
+      - SFTPGO_PLUGINS__0__AUTH_OPTIONS__SCOPE=1
+      # LDAP Configuration
+      - SFTPGO_PLUGIN_AUTH_LDAP_URL={{ ldap_url }}
+      - SFTPGO_PLUGIN_AUTH_LDAP_BASE_DN={{ ldap_base_dn }}
+      - SFTPGO_PLUGIN_AUTH_LDAP_BIND_DN={{ ldap_bind_dn }}
+      - SFTPGO_PLUGIN_AUTH_LDAP_PASSWORD={{ ldap_bind_password }}
+      - SFTPGO_PLUGIN_AUTH_STARTTLS={{ ldap_start_tls }}
+      - SFTPGO_PLUGIN_AUTH_LDAP_SEARCH_QUERY={{ ldap_search_query }}
+      - SFTPGO_PLUGIN_AUTH_LDAP_GROUP_ATTRIBUTES={{ ldap_group_attributes }}
+      - SFTPGO_PLUGIN_AUTH_CACHE_TIME={{ ldap_cache_time }}
+{% endif %}
+    volumes:
+      - sftpgo-data:/srv/sftpgo
+      - sftpgo-home:/var/lib/sftpgo
+    restart: unless-stopped
+
+volumes:
+  sftpgo-data:
+  sftpgo-home:
