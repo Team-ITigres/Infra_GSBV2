@@ -2,13 +2,13 @@
 
 set -e
 
-# # === VERIFICATION ARGUMENT ===
-# if [ "$1" != "full" ]; then
-#   apt install figlet -y
-#   figlet -f banner "debrouille toi"
-#   figlet -f banner "tie pas un tigre"
-#   exit 1
-# fi
+# === VERIFICATION ARGUMENT ===
+if [ "$1" != "full" ]; then
+  apt install figlet -y
+  figlet -f banner "debrouille toi"
+  figlet -f banner "tie pas un tigre"
+  exit 1
+fi
 
 # === CONFIG ===
 CTID=110
