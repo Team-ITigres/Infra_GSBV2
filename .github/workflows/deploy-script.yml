@@ -14,6 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug - List files
+        run: |
+          pwd
+          ls -la
+
       - name: Setup SSH Key
         run: |
           mkdir -p ${{ runner.temp }}/.ssh
