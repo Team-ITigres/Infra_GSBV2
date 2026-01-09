@@ -25,6 +25,7 @@ services:
     environment:
       # Configuration de la base de données
       GLPI_DB_HOST: {{ glpi_db_host | default('mariadb') }}
+      GLPI_DB_PORT: 3306
       GLPI_DB_NAME: {{ glpi_db_name | default('glpi') }}
       GLPI_DB_USER: {{ glpi_db_user | default('glpi') }}
       GLPI_DB_PASSWORD: {{ glpi_db_password | default('glpipassword') }}

@@ -15,7 +15,7 @@ services:
     cap_add:
       - NET_ADMIN
     healthcheck:
-      test: ["CMD", "ss", "--listening", "--tcp", "-n", "-H", "|", "grep", "-E", ":25|:587|:465|:143|:993"]
+      test: ["CMD-SHELL", "ss --listening --tcp -n -H | grep -E ':25|:587|:465|:143|:993'"]
       timeout: 3s
       retries: 0
 
