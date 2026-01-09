@@ -422,5 +422,3 @@ echo "✅ Déploiement complet terminé avec succès."
 
 DURATION=$(($(date +%s) - START_TIME))
 echo "Temps de préparation: ${DURATION} secondes"
-
-#test
