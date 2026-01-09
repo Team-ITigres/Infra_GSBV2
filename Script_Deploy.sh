@@ -421,4 +421,11 @@ echo ""
 echo "✅ Déploiement complet terminé avec succès."
 
 DURATION=$(($(date +%s) - START_TIME))
-echo "Temps de préparation: ${DURATION} secondes"
+MINUTES=$((DURATION / 60))
+SECONDS=$((DURATION % 60))
+
+if [ $MINUTES -gt 0 ]; then
+  echo "Temps de préparation: ${MINUTES} minute(s) ${SECONDS} seconde(s) (${DURATION} secondes au total)"
+else
+  echo "Temps de préparation: ${SECONDS} seconde(s)"
+fi
