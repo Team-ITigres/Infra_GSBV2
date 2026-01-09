@@ -150,7 +150,15 @@ filtering:
   blocking_mode: default
   parental_block_host: family-block.dns.adguard.com
   safebrowsing_block_host: standard-block.dns.adguard.com
-  rewrites: []
+  rewrites:
+    - domain: pulse.gsb.local
+      answer: 172.16.0.4
+    - domain: glpi.gsb.local
+      answer: 172.16.0.5
+    - domain: roundcube.gsb.local
+      answer: 172.16.0.6
+    - domain: adguard.gsb.local
+      answer: 172.16.0.3
   safe_fs_patterns:
     - /opt/AdGuardHome/userfilters/*
   safebrowsing_cache_size: 1048576
