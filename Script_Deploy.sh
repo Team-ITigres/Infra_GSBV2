@@ -1,6 +1,6 @@
-# #!/bin/bash
+#!/bin/bash
 
-# set -e
+set -e
 
 # # === VERIFICATION ARGUMENT ===
 # if [ "$1" != "full" ]; then
@@ -313,8 +313,8 @@ node="$node"
 echo "[+] Mise à jour des paquets..."
 apt update
 
-echo "[+] Installation des dépendances pour Docker..."
-apt install -y ca-certificates curl gnupg
+echo "[+] Installation des dépendances pour Docker et tmux..."
+apt install -y ca-certificates curl gnupg tmux
 
 echo "[+] Ajout de la clé GPG Docker..."
 curl -fsSL https://download.docker.com/linux/debian/gpg \
@@ -354,8 +354,8 @@ EOT
 echo "[+] Vérification du contenu du fichier .env_secret..."
 cat /root/.env_secret
 
-echo "[+] Téléchargement de l'image adminbox:0..."
-docker pull ghcr.io/leq-letigre/adminbox:0
+echo "[+] Téléchargement de l'image adminbox:$TAG_ADMINBOX..."
+docker pull ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
 
 echo "[+] Création de la fonction terransible avec tag $TAG_ADMINBOX..."
 cat >> /root/.bashrc <<FUNCEOF
@@ -403,13 +403,17 @@ echo "[+] Installation des rôles Ansible..."
 cd /Infra_GSBV2/Ansible
 terransible ansible-galaxy install -r requirements.yml --force
 
-echo "[+] Exécution du playbook Ansible..."
-terransible tmux new "ansible-playbook Install_Linuxs.yml" \; split -v "ansible-playbook Install_Windows.yml"
-
 EOF
 
+echo "[+] Lancement des playbooks Ansible en mode tmux..."
+
+# Connexion SSH avec terminal et lancement automatique de tmux
+# Note: tmux doit être lancé AVANT terransible, car terransible est un conteneur Docker
+ssh -t -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
+  "cd /Infra_GSBV2/Ansible && tmux new-session 'terransible ansible-playbook Install_Linuxs.yml' \\; split-window -h 'terransible ansible-playbook Install_Windows.yml'"
+
+echo ""
 echo "✅ Déploiement complet terminé avec succès."
 
 DURATION=$(($(date +%s) - START_TIME))
-
-echo "Temps d'exécution: ${DURATION} secondes"
+echo "Temps de préparation: ${DURATION} secondes"
