@@ -91,6 +91,21 @@
     state: present
     recreate: "{{ 'always' if docker_compose_deployed.changed else 'never' }}"
 
+- name: Corriger les permissions des volumes GLPI pour l'utilisateur www-data (UID 33)
+  ansible.builtin.shell: |
+    chown -R 33:33 /var/lib/docker/volumes/glpi_glpi-files/_data
+    chown -R 33:33 /var/lib/docker/volumes/glpi_glpi-config/_data
+    chown -R 33:33 /var/lib/docker/volumes/glpi_glpi-marketplace/_data
+  register: permissions_fixed
+  changed_when: false
+
+- name: Redémarrer GLPI si nécessaire
+  community.docker.docker_compose_v2:
+    project_src: /srv/glpi
+    services:
+      - glpi
+    state: restarted
+
 - name: Attendre que MariaDB soit complètement initialisée avec le dump
   ansible.builtin.shell: |
     for i in {1..60}; do
