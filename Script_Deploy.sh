@@ -3,12 +3,12 @@
 set -e
 
 # === VERIFICATION ARGUMENT ===
-if [ "$1" != "full" ]; then
-  apt install figlet -y
-  figlet -f banner "debrouille toi"
-  figlet -f banner "tie pas un tigre"
-  exit 1
-fi
+# if [ "$1" != "full" ]; then
+#   apt install figlet -y
+#   figlet -f banner "debrouille toi"
+#   figlet -f banner "tie pas un tigre"
+#   exit 1
+# fi
 
 # === CONFIG ===
 CTID=110
@@ -36,7 +36,6 @@ PULSE_USER="pulse-monitor@pam"
 PULSE_TOKEN_NAME="pulse-token"
 GITHUB_REPO="https://github.com/Team-ITigres/Infra_GSBV2.git"
 START_TIME=$(date +%s)
-TAG_ADMINBOX="0.1"
 NOM_WINSRV_Backup="vzdump-qemu-101-2025_09_13-14_41_02.vma.zst"
 
 # 1) Télécharger la backup du win srv 2022
@@ -354,10 +353,16 @@ EOT
 echo "[+] Vérification du contenu du fichier .env_secret..."
 cat /root/.env_secret
 
-echo "[+] Téléchargement de l'image adminbox:$TAG_ADMINBOX..."
-docker pull ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
+echo "[+] Téléchargement de l'image adminbox:latest depuis m2shelper..."
+wget --no-check-certificate --progress=bar:force:noscroll https://m2shelper.boisloret.fr/scripts/deploy-infra-gsb/adminbox-latest.tar -O /tmp/adminbox.tar
 
-echo "[+] Création de la fonction terransible avec tag $TAG_ADMINBOX..."
+echo "[+] Chargement de l'image Docker..."
+docker load -i /tmp/adminbox.tar
+
+echo "[+] Nettoyage du fichier temporaire..."
+rm -f /tmp/adminbox.tar
+
+echo "[+] Création de la fonction terransible..."
 cat >> /root/.bashrc <<FUNCEOF
 terransible() {
   if [ \\\$# -eq 0 ]; then
@@ -365,13 +370,13 @@ terransible() {
       -v /root/etc/ansible:/root/etc/ansible \\
       -v "\\\$PWD":/work \\
       --env-file /root/.env_secret \\
-      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX
+      adminbox:latest
   else
     docker run --rm --network="host" \\
       -v /root/etc/ansible:/root/etc/ansible \\
       -v "\\\$PWD":/work \\
       --env-file /root/.env_secret \\
-      ghcr.io/leq-letigre/adminbox:$TAG_ADMINBOX "\\\$@"
+      adminbox:latest "\\\$@"
   fi
 }
 FUNCEOF

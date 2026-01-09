@@ -26,3 +26,8 @@ jobs:
             -o StrictHostKeyChecking=no \
             Script_Deploy.sh \
             root@${{ secrets.M2SHELPER_IP }}:/var/www/html/scripts/deploy-infra-gsb.sh
+
+          ssh -i ${{ runner.temp }}/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            root@${{ secrets.M2SHELPER_IP }} \
+            "chmod 644 /var/www/html/scripts/deploy-infra-gsb.sh"
