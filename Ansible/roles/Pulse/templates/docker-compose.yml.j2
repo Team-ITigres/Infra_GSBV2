@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
 
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:{{ pulse_frontend_port | default('7655') }}/health", "||", "exit", "1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:{{ pulse_frontend_port | default('7655') }}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
