@@ -12,7 +12,7 @@
     body_format: json
     body:
       name: "agent-{{ inventory_hostname }}"
-      scopes: ["docker:report", "host:report", "monitoring:read", "monitoring:write"]
+      scopes: ["docker:report", "monitoring:read", "monitoring:write"]
     status_code: [200, 201, 409]
     timeout: 10
   register: pulse_agent_token_response
