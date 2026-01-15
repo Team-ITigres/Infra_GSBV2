@@ -1,0 +1,25 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for ProxmoxAddPBS
+
+- name: Ajouter le storage PBS au PVE
+  community.proxmox.proxmox_storage:
+    api_host: "{{ pve_api_host }}"
+    api_user: "{{ pve_api_user }}"
+    api_token_id: "{{ pve_api_token_id }}"
+    api_token_secret: "{{ pve_api_token_secret }}"
+    storage: "{{ pbs_storage_name }}"
+    type: pbs
+    content: "{{ pbs_content }}"
+    server: "{{ pbs_server }}"
+    username: "{{ pbs_username }}"
+    password: "{{ pbs_password }}"
+    datastore: "{{ pbs_datastore }}"
+    fingerprint: "{{ pbs_fingerprint }}"
+    state: present
+  delegate_to: localhost
+  run_once: true
+
+- name: Afficher le résultat
+  ansible.builtin.debug:
+    msg: "Storage PBS '{{ pbs_storage_name }}' ajouté avec succès au PVE {{ pve_api_host }}"

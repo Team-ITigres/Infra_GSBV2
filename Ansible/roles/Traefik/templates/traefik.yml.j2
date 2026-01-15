@@ -1,0 +1,16 @@
+api:
+  dashboard: {{ traefik_api_dashboard | lower }}
+  insecure: {{ traefik_api_insecure | lower }}
+
+entryPoints:
+  web:
+    address: "{{ traefik_entrypoint_web_address }}"
+
+providers:
+{% if traefik_docker_enabled %}
+  docker:
+    exposedByDefault: {{ traefik_docker_exposed_by_default | lower }}
+{% endif %}
+  file:
+    filename: /dynamic.yml
+    watch: {{ traefik_file_watch | lower }}

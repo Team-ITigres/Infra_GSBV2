@@ -1,0 +1,176 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/GLPI_Agent_GPO
+# Déploie GLPI Agent via GPO en important une golden GPO sauvegardée
+
+# =============================================================================
+# ÉTAPE 0 : Installer la console GPMC (prérequis)
+# =============================================================================
+
+- name: Installer la fonctionnalité GPMC
+  ansible.windows.win_feature:
+    name: GPMC
+    state: present
+    include_management_tools: true
+
+# =============================================================================
+# ÉTAPE 1 : Créer le dossier C:\Applications et le partage SMB
+# =============================================================================
+
+- name: Créer le dossier C:\Applications
+  ansible.windows.win_file:
+    path: "{{ glpi_agent_apps_path }}"
+    state: directory
+
+- name: Configurer les permissions NTFS sur C:\Applications
+  ansible.windows.win_powershell:
+    script: |
+      $Path = "{{ glpi_agent_apps_path }}"
+      $Domain = "{{ glpi_agent_domain }}"
+
+      # Récupérer l'ACL actuelle
+      $Acl = Get-Acl $Path
+
+      # Désactiver l'héritage et copier les règles héritées
+      $Acl.SetAccessRuleProtection($true, $true)
+
+      # Ajouter Domain Admins en FullControl
+      $DomainAdmins = New-Object System.Security.Principal.NTAccount("$Domain", "Domain Admins")
+      $AdminRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+          $DomainAdmins,
+          "FullControl",
+          "ContainerInherit,ObjectInherit",
+          "None",
+          "Allow"
+      )
+      $Acl.SetAccessRule($AdminRule)
+
+      # Ajouter Domain Computers en ReadAndExecute
+      $DomainComputers = New-Object System.Security.Principal.NTAccount("$Domain", "Domain Computers")
+      $ComputersRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+          $DomainComputers,
+          "ReadAndExecute",
+          "ContainerInherit,ObjectInherit",
+          "None",
+          "Allow"
+      )
+      $Acl.SetAccessRule($ComputersRule)
+
+      # Appliquer l'ACL
+      Set-Acl -Path $Path -AclObject $Acl
+      Write-Output "Permissions NTFS configurees sur $Path"
+
+- name: Créer ou mettre à jour le partage SMB Applications
+  ansible.windows.win_powershell:
+    script: |
+      $ShareName = "{{ glpi_agent_share_name }}"
+      $SharePath = "{{ glpi_agent_apps_path }}"
+      $Domain = "{{ glpi_agent_domain }}"
+
+      $ExistingShare = Get-SmbShare -Name $ShareName -ErrorAction SilentlyContinue
+
+      if ($ExistingShare) {
+          # Vérifier que le chemin est correct
+          if ($ExistingShare.Path -ne $SharePath) {
+              Remove-SmbShare -Name $ShareName -Force
+              New-SmbShare -Name $ShareName -Path $SharePath -FullAccess "$Domain\Domain Admins" -ReadAccess "$Domain\Domain Computers"
+              Write-Output "Partage '$ShareName' recree avec le bon chemin"
+          } else {
+              # Mettre à jour les permissions du partage
+              Revoke-SmbShareAccess -Name $ShareName -AccountName "Everyone" -Force -ErrorAction SilentlyContinue
+              Grant-SmbShareAccess -Name $ShareName -AccountName "$Domain\Domain Admins" -AccessRight Full -Force
+              Grant-SmbShareAccess -Name $ShareName -AccountName "$Domain\Domain Computers" -AccessRight Read -Force
+              Write-Output "Partage '$ShareName' existe, permissions mises a jour"
+          }
+      } else {
+          New-SmbShare -Name $ShareName -Path $SharePath -FullAccess "$Domain\Domain Admins" -ReadAccess "$Domain\Domain Computers"
+          Write-Output "Partage '$ShareName' cree avec succes"
+      }
+
+# =============================================================================
+# ÉTAPE 2 : Copier le fichier MSI
+# =============================================================================
+
+- name: Copier le MSI GLPI Agent vers C:\Applications
+  ansible.windows.win_copy:
+    src: "{{ glpi_agent_msi_file }}"
+    dest: "{{ glpi_agent_apps_path }}\\{{ glpi_agent_msi_file }}"
+
+# =============================================================================
+# ÉTAPE 3 : Copier et importer le backup de la GPO
+# =============================================================================
+
+- name: Créer le dossier temporaire pour le backup GPO
+  ansible.windows.win_file:
+    path: "{{ glpi_agent_gpo_backup_dest }}"
+    state: directory
+
+- name: Copier le backup de la GPO vers le DC
+  ansible.windows.win_copy:
+    src: "GPO_Backup/"
+    dest: "{{ glpi_agent_gpo_backup_dest }}\\"
+
+- name: Importer la GPO depuis le backup
+  ansible.windows.win_powershell:
+    script: |
+      Import-Module GroupPolicy
+
+      $GpoName = "{{ glpi_agent_gpo_name }}"
+      $BackupPath = "{{ glpi_agent_gpo_backup_dest }}"
+
+      # Trouver le GUID du backup dans le dossier
+      $BackupGuid = Get-ChildItem -Path $BackupPath -Directory |
+          Where-Object { $_.Name -match '^\{[0-9A-Fa-f-]+\}$' } |
+          Select-Object -First 1 -ExpandProperty Name
+
+      if (-not $BackupGuid) {
+          throw "Aucun backup GPO trouve dans $BackupPath"
+      }
+
+      Write-Output "Backup GPO trouve: $BackupGuid"
+
+      # Vérifier si la GPO existe déjà
+      $ExistingGpo = Get-GPO -Name $GpoName -ErrorAction SilentlyContinue
+
+      if ($ExistingGpo) {
+          # Importer en écrasant la GPO existante
+          Import-GPO -BackupId $BackupGuid -Path $BackupPath -TargetName $GpoName -CreateIfNeeded
+          Write-Output "GPO '$GpoName' mise a jour depuis le backup"
+      } else {
+          # Créer et importer la GPO
+          Import-GPO -BackupId $BackupGuid -Path $BackupPath -TargetName $GpoName -CreateIfNeeded
+          Write-Output "GPO '$GpoName' creee depuis le backup"
+      }
+
+# =============================================================================
+# ÉTAPE 4 : Lier la GPO à l'OU des ordinateurs
+# =============================================================================
+
+- name: Lier la GPO à l'OU cible
+  ansible.windows.win_powershell:
+    script: |
+      Import-Module GroupPolicy
+
+      $GpoName = "{{ glpi_agent_gpo_name }}"
+      $TargetOU = "{{ glpi_agent_target_ou }}"
+
+      # Vérifier si le lien existe déjà
+      $Inheritance = Get-GPInheritance -Target $TargetOU -ErrorAction SilentlyContinue
+      $ExistingLink = $Inheritance.GpoLinks | Where-Object { $_.DisplayName -eq $GpoName }
+
+      if (-not $ExistingLink) {
+          New-GPLink -Name $GpoName -Target $TargetOU -LinkEnabled Yes
+          Write-Output "GPO '$GpoName' liee a: $TargetOU"
+      } else {
+          Write-Output "GPO '$GpoName' deja liee a: $TargetOU"
+      }
+
+# =============================================================================
+# ÉTAPE 5 : Nettoyage (optionnel)
+# =============================================================================
+
+- name: Nettoyer le dossier temporaire du backup GPO
+  ansible.windows.win_file:
+    path: "{{ glpi_agent_gpo_backup_dest }}"
+    state: absent
+  when: glpi_agent_cleanup_backup | default(true)

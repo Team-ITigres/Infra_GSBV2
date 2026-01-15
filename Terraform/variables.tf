@@ -30,8 +30,9 @@ variable "lxc_linux" {
     ipconfig0 = string
     gw = string
     network_bridge = string
+    vlan_id = optional(number)
   }))
-  
+
 }
 
 variable "win_srv" {

@@ -1,0 +1,60 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/Treafik
+
+- name: Créer le dossier Traefik
+  ansible.builtin.file:
+    path: /srv/traefik
+    state: directory
+    mode: '0755'
+
+- name: Déployer le fichier de configuration traefik.yml
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: /srv/traefik/traefik.yml
+    mode: '0644'
+  register: traefik_config_deployed
+
+- name: Déployer le fichier de configuration dynamique dynamic.yml
+  ansible.builtin.template:
+    src: dynamic.yml.j2
+    dest: /srv/traefik/dynamic.yml
+    mode: '0644'
+  register: traefik_dynamic_deployed
+
+- name: Déployer le docker-compose.yml pour Traefik
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: /srv/traefik/compose.yaml
+    mode: '0644'
+  register: traefik_docker_compose_deployed
+
+- name: Lancer le conteneur Traefik
+  community.docker.docker_compose_v2:
+    project_src: /srv/traefik
+    state: present
+    recreate: "{{ 'always' if (traefik_docker_compose_deployed.changed or traefik_config_deployed.changed or traefik_dynamic_deployed.changed) else 'never' }}"
+
+- name: Attendre que Traefik soit complètement démarré
+  ansible.builtin.uri:
+    url: "http://localhost:{{ traefik_dashboard_port }}/api/version"
+    status_code: 200
+    timeout: 5
+  register: traefik_health_check
+  until: traefik_health_check.status == 200
+  retries: 12
+  delay: 5
+
+- name: Construire la liste des routes
+  ansible.builtin.set_fact:
+    traefik_routes_list: "{{ traefik_routes_list | default([]) + ['  - ' + item.host + ' -> ' + item.url] }}"
+  loop: "{{ traefik_routers }}"
+
+- name: Afficher les informations de connexion
+  ansible.builtin.debug:
+    msg: |
+      Traefik est déployé avec succès !
+      URL du Dashboard: http://{{ ansible_host }}:{{ traefik_dashboard_port }}/dashboard/
+      Port Web: {{ traefik_web_port }}
+      Routes configurées:
+      {{ traefik_routes_list | join('\n      ') }}

@@ -1,0 +1,15 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/ProxmoxBackup
+
+# Proxmox Backup Server Configuration
+pbs_admin_email: "admin@gsb.local"
+pbs_http_port: "8007"
+pbs_datastore_name: "backup"
+pbs_datastore_path: "/var/lib/proxmox-backup/datastore"
+
+# Proxmox Repository Configuration
+proxmox_repo_url: "http://download.proxmox.com/debian/pbs"
+proxmox_release: "trixie"
+proxmox_repo_channel: "pbs-no-subscription"
+proxmox_gpg_key: "https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg"

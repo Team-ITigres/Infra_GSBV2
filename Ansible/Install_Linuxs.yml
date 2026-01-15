@@ -6,7 +6,7 @@
 
 - name: Install Docker
   become: yes
-  hosts: linuxs
+  hosts: linuxs !ProxmoxBackup
   roles:
     - roles/Install_Docker
 
@@ -35,6 +35,18 @@
   hosts: SFTPGO
   roles:
     - roles/SFTPGO
+
+- name: Install Treafik
+  become: yes
+  hosts: Stack-Web
+  roles:
+    - roles/Traefik
+
+- name: Install Proxmox Backup Server
+  become: yes
+  hosts: ProxmoxBackup
+  roles:
+    - roles/ProxmoxBackup
 
 - name : Install Pulse Agents
   become: yes

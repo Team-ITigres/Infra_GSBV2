@@ -53,6 +53,18 @@ lxc_linux = {
     disk_size = 20
     network_bridge = "DMZ"
     }
+
+    "ProxmoxBackup" = {
+    lxc_id = 130
+    name = "ProxmoxBackup"
+    cores = 2
+    memory = 2048
+    ipconfig0 = "172.16.31.1/30"
+    gw = "172.16.31.2"
+    disk_size = 100
+    network_bridge = "vmbr2"
+    vlan_id = 301
+    }
 }
 
 win_srv = {

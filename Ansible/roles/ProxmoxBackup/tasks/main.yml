@@ -1,0 +1,105 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/ProxmoxBackup
+
+- name: Mettre à jour le cache APT
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Installer les dépendances nécessaires
+  ansible.builtin.apt:
+    name:
+      - gnupg
+      - ca-certificates
+    state: present
+
+- name: Télécharger la clé GPG Proxmox
+  ansible.builtin.get_url:
+    url: "{{ proxmox_gpg_key }}"
+    dest: /usr/share/keyrings/proxmox-release.gpg
+    mode: '0644'
+
+- name: Ajouter le dépôt Proxmox Backup Server
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/proxmox-release.gpg] {{ proxmox_repo_url }} {{ proxmox_release }} {{ proxmox_repo_channel }}"
+    state: present
+    filename: pbs-repo
+
+- name: Désactiver le dépôt enterprise PBS
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/pbs-enterprise.sources
+    regexp: '^Enabled:'
+    line: 'Enabled: false'
+    insertafter: EOF
+  failed_when: false
+
+- name: Mettre à jour le cache APT après ajout du dépôt
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Installer Proxmox Backup Server
+  ansible.builtin.apt:
+    name: proxmox-backup-server
+    state: present
+
+- name: Créer le dossier du datastore
+  ansible.builtin.file:
+    path: "{{ pbs_datastore_path }}"
+    state: directory
+    owner: backup
+    group: backup
+    mode: '0750'
+
+- name: S'assurer que les services Proxmox Backup sont démarrés et activés
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - proxmox-backup
+    - proxmox-backup-proxy
+
+- name: Attendre que Proxmox Backup Server soit complètement démarré
+  ansible.builtin.wait_for:
+    port: "{{ pbs_http_port }}"
+    state: started
+    delay: 5
+    timeout: 60
+
+- name: Vérifier si le datastore existe déjà
+  ansible.builtin.command:
+    cmd: proxmox-backup-manager datastore list --output-format json
+  register: pbs_datastore_list
+  changed_when: false
+
+- name: Créer le datastore PBS
+  ansible.builtin.command:
+    cmd: proxmox-backup-manager datastore create {{ pbs_datastore_name }} {{ pbs_datastore_path }}
+  when: pbs_datastore_name not in (pbs_datastore_list.stdout | from_json | map(attribute='name') | list)
+
+- name: Mettre à jour tous les paquets
+  ansible.builtin.apt:
+    upgrade: yes
+    update_cache: yes
+
+- name: Récupérer le fingerprint du certificat PBS
+  ansible.builtin.command:
+    cmd: proxmox-backup-manager cert info
+  register: pbs_cert_info
+  changed_when: false
+
+- name: Définir le fingerprint comme fact
+  ansible.builtin.set_fact:
+    pbs_fingerprint: "{{ pbs_cert_info.stdout | regex_search('Fingerprint \\(sha256\\): ([A-Fa-f0-9:]+)', '\\1') | first }}"
+    cacheable: true
+
+- name: Afficher les informations de connexion
+  ansible.builtin.debug:
+    msg:
+      - "Proxmox Backup Server est installé avec succès !"
+      - "URL d'accès Web: https://{{ ansible_host }}:{{ pbs_http_port }}"
+      - "Utilisateur: root@pam"
+      - "Mot de passe: celui du système"
+      - "Datastore à configurer: {{ pbs_datastore_name }} -> {{ pbs_datastore_path }}"
+      - "Fingerprint: {{ pbs_fingerprint }}"

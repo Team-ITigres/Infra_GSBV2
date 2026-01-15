@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RegistrySettings clsid="{A3CCFC41-DFDB-43a5-8D26-0FE8B954DA51}"><Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="server" status="server" image="7" changed="2026-01-15 12:10:54" uid="{BA03B85A-A1E6-4461-A700-EC7015F76B24}"><Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SOFTWARE\GLPI-Agent" name="server" type="REG_SZ" value="http://172.16.0.5:8081/front/inventory.php"/></Registry>
+	<Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="tag" status="tag" image="7" changed="2026-01-15 11:45:09" uid="{45D0F3ED-7223-4488-9088-CD8802857C3E}"><Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SOFTWARE\GLPI-Agent" name="tag" type="REG_SZ" value="GSB"/></Registry>
+</RegistrySettings>

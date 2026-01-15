@@ -12,7 +12,7 @@ fi
 
 # === CONFIG ===
 CTID=110
-CT_LIST=(110 113 114 115 116)
+CT_LIST=(110 113 114 115 116 130)
 VM_LIST=(201 202)
 CTNAME="terransible"
 HOSTNAME="terransible"
@@ -88,6 +88,15 @@ fi
 echo "[+] Vérification/installation de jq..."
 if ! command -v jq >/dev/null 2>&1; then
   apt update && apt install -y jq
+fi
+
+echo "[+] Vérification et suppression du storage PBS si présent..."
+if pvesm status | grep -q "pbs-backup"; then
+  echo "⚠️ Storage PBS 'pbs-backup' détecté. Suppression..."
+  pvesm remove pbs-backup
+  echo "[+] Storage PBS supprimé"
+else
+  echo "[!] Aucun storage PBS 'pbs-backup' trouvé"
 fi
 
 echo "[+] Vérification et suppression des conteneurs LXC si présents..."

@@ -1,0 +1,17 @@
+http:
+  routers:
+{% for router in traefik_routers %}
+    {{ router.name }}:
+      rule: "Host(`{{ router.host }}`)"
+      service: {{ router.service }}
+      entryPoints:
+        - web
+{% endfor %}
+
+  services:
+{% for router in traefik_routers %}
+    {{ router.service }}:
+      loadBalancer:
+        servers:
+          - url: "{{ router.url }}"
+{% endfor %}

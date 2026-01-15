@@ -1,0 +1,14 @@
+services:
+  traefik:
+    image: traefik:{{ traefik_version }}
+    container_name: {{ traefik_container_name }}
+    ports:
+      - "{{ traefik_web_port }}:80"
+      - "{{ traefik_dashboard_port }}:8080"
+    volumes:
+      - /srv/traefik/traefik.yml:/traefik.yml:ro
+      - /srv/traefik/dynamic.yml:/dynamic.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - "--configFile=/traefik.yml"
+    restart: unless-stopped

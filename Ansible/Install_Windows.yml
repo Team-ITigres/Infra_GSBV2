@@ -2,6 +2,7 @@
   hosts: WinSRV01
   roles:
     - roles/PromouvoirAD01
+    - roles/GLPI_Agent_GPO
 
 - name: ReplicationAD02
   hosts: WinSRV02

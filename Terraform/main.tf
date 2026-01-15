@@ -63,6 +63,7 @@ resource "proxmox_virtual_environment_container" "lxc_linux" {
   network_interface {
     name    = "eth0"
     bridge  = each.value.network_bridge
+    vlan_id = each.value.vlan_id
     enabled = true
   }
 

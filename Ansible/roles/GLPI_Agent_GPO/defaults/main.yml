@@ -1,0 +1,29 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/GLPI_Agent_GPO
+# Déploie GLPI Agent via GPO (import depuis backup golden GPO)
+
+# Version de GLPI Agent (doit correspondre au fichier dans files/)
+glpi_agent_version: "1.15"
+
+# Nom du fichier MSI (dans files/)
+glpi_agent_msi_file: "GLPI-Agent-{{ glpi_agent_version }}-x64.msi"
+
+# Nom de la GPO
+glpi_agent_gpo_name: "GLPI_Agent_Install"
+
+# Chemin local pour le dossier Applications sur le DC
+glpi_agent_apps_path: "C:\\Applications"
+
+# Nom du partage réseau (sans $)
+glpi_agent_share_name: "Applications"
+
+# OU cible pour le lien GPO (racine du domaine par défaut)
+# Note: CN=Computers ne peut pas recevoir de lien GPO, utiliser DC=gsb,DC=local
+glpi_agent_target_ou: "DC=gsb,DC=local"
+
+# Chemin temporaire sur le DC pour le backup GPO
+glpi_agent_gpo_backup_dest: "C:\\Temp\\GPO_Backup"
+
+# Domaine AD
+glpi_agent_domain: "gsb.local"

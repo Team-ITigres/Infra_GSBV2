@@ -1,0 +1,50 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/Treafik
+
+# Traefik Configuration
+traefik_version: "v3.6"
+traefik_container_name: "traefik"
+
+# Ports Configuration
+traefik_web_port: "80"
+traefik_dashboard_port: "8080"
+
+# API Configuration
+traefik_api_dashboard: true
+traefik_api_insecure: true
+
+# EntryPoints Configuration
+traefik_entrypoint_web_address: ":80"
+
+# Provider Configuration
+traefik_docker_enabled: true
+traefik_docker_exposed_by_default: false
+traefik_file_watch: true
+
+# Dynamic Configuration
+traefik_routers:
+  - name: pulse
+    host: "pulse.gsb.local"
+    service: pulse
+    url: "http://172.16.0.5:7655"
+  - name: glpi
+    host: "glpi.gsb.local"
+    service: glpi
+    url: "http://172.16.0.5:8081"
+  - name: roundcube
+    host: "roundcube.gsb.local"
+    service: roundcube
+    url: "http://172.16.0.6:80"
+  - name: adguard
+    host: "adguard.gsb.local"
+    service: adguard
+    url: "http://172.16.0.3:8080"
+  - name: sfptgo
+    host: "sfptgo.gsb.local"
+    service: sfptgo
+    url: "http://172.16.0.254:8080"
+  - name: pbs
+    host: "pbs.gsb.local"
+    service: pbs
+    url: "http://172.16.0.254:8007"

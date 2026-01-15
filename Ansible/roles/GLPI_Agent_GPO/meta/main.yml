@@ -1,0 +1,20 @@
+#SPDX-License-Identifier: MIT-0
+---
+galaxy_info:
+  author: GSB
+  description: Deploie GLPI Agent via GPO sur un domaine Active Directory
+  license: MIT-0
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Windows
+      versions:
+        - "2019"
+        - "2022"
+  galaxy_tags:
+    - windows
+    - glpi
+    - gpo
+    - inventory
+    - agent
+
+dependencies: []
