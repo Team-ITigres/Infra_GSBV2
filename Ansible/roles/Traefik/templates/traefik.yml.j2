@@ -5,6 +5,13 @@ api:
 entryPoints:
   web:
     address: "{{ traefik_entrypoint_web_address }}"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: "{{ traefik_entrypoint_websecure_address }}"
 
 providers:
 {% if traefik_docker_enabled %}

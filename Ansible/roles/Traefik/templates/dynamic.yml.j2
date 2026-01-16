@@ -5,7 +5,8 @@ http:
       rule: "Host(`{{ router.host }}`)"
       service: {{ router.service }}
       entryPoints:
-        - web
+        - websecure
+      tls: {}
 {% endfor %}
 
   services:
@@ -22,3 +23,13 @@ http:
   serversTransports:
     insecureTransport:
       insecureSkipVerify: true
+
+tls:
+  certificates:
+    - certFile: /certs/cert.pem
+      keyFile: /certs/key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/cert.pem
+        keyFile: /certs/key.pem

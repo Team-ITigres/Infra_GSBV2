@@ -112,7 +112,8 @@ filters:
     name: AdAway Default Blocklist
     id: 2
 whitelist_filters: []
-user_rules: []
+user_rules:
+  - '/^[^.]+\.gsb\.local$/$dnstype=A,dnsrewrite=NOERROR;A;172.16.0.4'
 dhcp:
   enabled: false
   interface_name: ""
@@ -150,21 +151,7 @@ filtering:
   blocking_mode: default
   parental_block_host: family-block.dns.adguard.com
   safebrowsing_block_host: standard-block.dns.adguard.com
-  rewrites:
-    - domain: pulse.gsb.local
-      answer: 172.16.0.4
-    - domain: glpi.gsb.local
-      answer: 172.16.0.4
-    - domain: roundcube.gsb.local
-      answer: 172.16.0.4
-    - domain: adguard.gsb.local
-      answer: 172.16.0.4
-    - domain: sftpgo.gsb.local
-      answer: 172.16.0.4
-    - domain: pbs.gsb.local
-      answer: 172.16.0.4
-    - domain: traefik.gsb.local
-      answer: 172.16.0.4
+  rewrites: []
   safe_fs_patterns:
     - /opt/AdGuardHome/userfilters/*
   safebrowsing_cache_size: 1048576

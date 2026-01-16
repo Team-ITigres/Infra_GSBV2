@@ -8,6 +8,28 @@
     state: directory
     mode: '0755'
 
+- name: Créer le dossier pour les certificats
+  ansible.builtin.file:
+    path: /srv/traefik/certs
+    state: directory
+    mode: '0755'
+
+- name: Déployer le script de génération de certificats
+  ansible.builtin.template:
+    src: generate-certs.sh.j2
+    dest: /srv/traefik/generate-certs.sh
+    mode: '0755'
+
+- name: Vérifier si les certificats existent déjà
+  ansible.builtin.stat:
+    path: /srv/traefik/certs/cert.pem
+  register: cert_file
+
+- name: Générer les certificats auto-signés si nécessaire
+  ansible.builtin.command:
+    cmd: /srv/traefik/generate-certs.sh
+  when: not cert_file.stat.exists
+
 - name: Déployer le fichier de configuration traefik.yml
   ansible.builtin.template:
     src: traefik.yml.j2

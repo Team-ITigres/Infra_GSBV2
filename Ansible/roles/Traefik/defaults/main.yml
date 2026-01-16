@@ -8,6 +8,7 @@ traefik_container_name: "traefik"
 
 # Ports Configuration
 traefik_web_port: "80"
+traefik_websecure_port: "443"
 traefik_dashboard_port: "8080"
 
 # API Configuration
@@ -16,6 +17,7 @@ traefik_api_insecure: true
 
 # EntryPoints Configuration
 traefik_entrypoint_web_address: ":80"
+traefik_entrypoint_websecure_address: ":443"
 
 # Provider Configuration
 traefik_docker_enabled: true
@@ -40,9 +42,9 @@ traefik_routers:
     host: "adguard.gsb.local"
     service: adguard
     url: "http://172.16.0.3:8080"
-  - name: sfptgo
-    host: "sfptgo.gsb.local"
-    service: sfptgo
+  - name: sftpgo
+    host: "sftpgo.gsb.local"
+    service: sftpgo
     url: "http://172.16.0.254:8080"
   - name: pbs
     host: "pbs.gsb.local"
@@ -52,3 +54,7 @@ traefik_routers:
     host: "traefik.gsb.local"
     service: traefik
     url: "http://172.16.0.4:8080"
+  - name: router
+    host: "router.gsb.local"
+    service: router
+    url: "https://172.16.0.254"

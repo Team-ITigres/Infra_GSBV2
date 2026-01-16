@@ -4,10 +4,12 @@ services:
     container_name: {{ traefik_container_name }}
     ports:
       - "{{ traefik_web_port }}:80"
+      - "{{ traefik_websecure_port }}:443"
       - "{{ traefik_dashboard_port }}:8080"
     volumes:
       - /srv/traefik/traefik.yml:/traefik.yml:ro
       - /srv/traefik/dynamic.yml:/dynamic.yml:ro
+      - /srv/traefik/certs:/certs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command:
       - "--configFile=/traefik.yml"

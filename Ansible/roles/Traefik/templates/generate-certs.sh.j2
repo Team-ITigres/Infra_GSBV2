@@ -1,0 +1,25 @@
+#!/bin/bash
+# Script pour générer des certificats auto-signés pour Traefik
+
+CERT_DIR="/srv/traefik/certs"
+CERT_FILE="$CERT_DIR/cert.pem"
+KEY_FILE="$CERT_DIR/key.pem"
+
+# Créer le répertoire s'il n'existe pas
+mkdir -p "$CERT_DIR"
+
+# Générer le certificat auto-signé valide pour 365 jours
+openssl req -x509 -newkey rsa:4096 -nodes \
+  -keyout "$KEY_FILE" \
+  -out "$CERT_FILE" \
+  -days 365 \
+  -subj "/C=FR/ST=France/L=Paris/O=GSB/OU=IT/CN=*.gsb.local" \
+  -addext "subjectAltName=DNS:*.gsb.local,DNS:gsb.local{% for router in traefik_routers %},DNS:{{ router.host }}{% endfor %}"
+
+# Définir les permissions appropriées
+chmod 644 "$CERT_FILE"
+chmod 600 "$KEY_FILE"
+
+echo "Certificats générés avec succès dans $CERT_DIR"
+echo "Certificat: $CERT_FILE"
+echo "Clé privée: $KEY_FILE"
