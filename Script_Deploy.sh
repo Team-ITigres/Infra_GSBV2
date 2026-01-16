@@ -390,6 +390,12 @@ terransible() {
 }
 FUNCEOF
 
+echo "[+] Ajout des alias pour les playbook Ansible..."
+cat >> /root/.bashrc <<ALIASEOF
+alias apl='ansible-playbook Install_Linuxs.yml'
+alias apw='ansible-playbook Install_Windows.yml'
+ALIASEOF
+
 echo "[+] Chargement de la fonction terransible..."
 source /root/.bashrc
 
@@ -424,9 +430,8 @@ echo "[+] Lancement des playbooks Ansible en mode tmux..."
 # Connexion SSH avec terminal et lancement automatique de tmux
 # Note: tmux doit être lancé AVANT terransible, car terransible est un conteneur Docker
 ssh -t -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
-  "cd /Infra_GSBV2/Ansible && tmux new-session 'terransible ansible-playbook Install_Linuxs.yml' \\; split-window -h 'terransible ansible-playbook Install_Windows.yml'"
+  "cd /Infra_GSBV2/Ansible && tmux new-session 'terransible ansible-playbook Install_Linuxs.yml' \; split-window -h 'terransible ansible-playbook Install_Windows.yml'"
 
-echo ""
 echo "✅ Déploiement complet terminé avec succès."
 
 DURATION=$(($(date +%s) - START_TIME))
