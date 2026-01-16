@@ -22,7 +22,7 @@ RUN apt update \
     python3-pip \
     python3-venv \
     proxmoxer \
-    requests
+    requests \
  && rm -rf /var/lib/apt/lists/*
 
 # === Ansible dans un venv dédié ===
