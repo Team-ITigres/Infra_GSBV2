@@ -21,9 +21,12 @@ RUN apt update \
     python3 \
     python3-pip \
     python3-venv \
-    proxmoxer \
-    requests \
  && rm -rf /var/lib/apt/lists/*
+
+# === Packages Python système ===
+RUN pip3 install --no-cache-dir --break-system-packages \
+    proxmoxer \
+    requests
 
 # === Ansible dans un venv dédié ===
 RUN mkdir -p /opt/venvs \
