@@ -105,10 +105,16 @@ resource "proxmox_virtual_environment_vm" "winsrv" {
   cpu {
     cores   = 6
     sockets = 1
+    type    = "x86-64-v2-AES"
   }
 
   memory {
     dedicated = 6144
+    floating  = 6144
+  }
+
+  vga {
+    type = "virtio"
   }
 
   # Disque principal SCSI
