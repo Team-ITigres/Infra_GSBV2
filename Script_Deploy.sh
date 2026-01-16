@@ -425,4 +425,4 @@ echo "[+] Lancement des playbooks Ansible en mode tmux..."
 # Note: tmux doit être lancé AVANT terransible, car terransible est un conteneur Docker
 # L'option -tt force l'allocation d'un pseudo-terminal même si stdin n'est pas un terminal
 ssh -tt -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
-  "cd /Infra_GSBV2/Ansible && tmux new-session 'terransible ansible-playbook Install_Linuxs.yml' \; split-window -h 'terransible ansible-playbook Install_Windows.yml'"
+  "cd /Infra_GSBV2/Ansible && tmux new-session -d 'terransible ansible-playbook Install_Linuxs.yml' \; split-window -h 'terransible ansible-playbook Install_Windows.yml' \; attach"
