@@ -32,7 +32,3 @@ pulse_metrics_retention_raw_hours: "24"
 pulse_metrics_retention_minute_hours: "168"
 pulse_metrics_retention_hourly_days: "90"
 pulse_metrics_retention_daily_days: "730"
-
-# Génération du token pour les agents
-pulse_create_agent_token: true
-pulse_agent_token_name: "infrastructure-agents"
