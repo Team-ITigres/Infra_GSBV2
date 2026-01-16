@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 INVENTORY="/work/Ansible/00_inventory.yml"
-HOST="GLPI"
+HOST="Stack-App"
 CONTAINER_NAME="mariadb"
 DB_USER="glpi_user"
 DB_PASSWORD="GlpiUserPassw0rd!"
