@@ -419,10 +419,33 @@ terransible ansible-galaxy install -r requirements.yml --force
 
 EOF
 
+echo "[+] Attente de la disponibilité des hôtes Ansible..."
+MAX_ATTEMPTS=60
+ATTEMPT=0
+
+while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+  echo "[+] Tentative $((ATTEMPT + 1))/$MAX_ATTEMPTS..."
+
+  if ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
+    "cd /Infra_GSBV2/Ansible && terransible ansible all -m ping" > /dev/null 2>&1; then
+    echo "[+] Tous les hôtes sont joignables"
+    break
+  fi
+
+  ATTEMPT=$((ATTEMPT + 1))
+
+  if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+    echo "[!] Erreur: Impossible de contacter tous les hôtes après $MAX_ATTEMPTS tentatives"
+    exit 1
+  fi
+
+  sleep 5
+done
+echo ""
 echo "[+] Lancement des playbooks Ansible en mode tmux..."
 
 # Connexion SSH avec terminal et lancement automatique de tmux
 # Note: tmux doit être lancé AVANT terransible, car terransible est un conteneur Docker
 # L'option -tt force l'allocation d'un pseudo-terminal même si stdin n'est pas un terminal
-ssh -tt -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
+ssh -t -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
   "cd /Infra_GSBV2/Ansible && tmux new-session -d 'terransible ansible-playbook Install_Linuxs.yml' \; split-window -h 'terransible ansible-playbook Install_Windows.yml' \; attach"
