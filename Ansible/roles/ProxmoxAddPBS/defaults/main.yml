@@ -8,7 +8,7 @@ pve_api_host: "{{ lookup('env', 'TF_VAR_proxmox_api_url') | regex_replace('^http
 pve_api_user: "{{ lookup('env', 'TF_VAR_proxmox_api_token_id').split('!')[0] }}"
 pve_api_token_id: "{{ lookup('env', 'TF_VAR_proxmox_api_token_id').split('!')[1] }}"
 pve_api_token_secret: "{{ lookup('env', 'TF_VAR_proxmox_api_token') }}"
-
+pve_api_token_nodes: "{{ lookup('env', 'TF_VAR_proxmox_node_names').split(',') }}"
 # PBS Configuration
 pbs_storage_name: "pbs-backup"
 pbs_server: "172.16.31.1"

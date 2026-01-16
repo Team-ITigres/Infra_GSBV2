@@ -2,20 +2,33 @@
 ---
 # tasks file for ProxmoxAddPBS
 
+- name: Récupérer le fingerprint du certificat PBS
+  ansible.builtin.command:
+    cmd: ssh -i ~/etc/ansible/keys/ProxmoxBackup -o StrictHostKeyChecking=no root@{{ pbs_server }} "proxmox-backup-manager cert info"
+  register: pbs_cert_info
+  changed_when: false
+  delegate_to: localhost
+
+- name: Définir le fingerprint
+  ansible.builtin.set_fact:
+    pbs_fingerprint: "{{ pbs_cert_info.stdout | regex_search('Fingerprint \\(sha256\\): ([A-Fa-f0-9:]+)', '\\1') | first }}"
+
 - name: Ajouter le storage PBS au PVE
   community.proxmox.proxmox_storage:
     api_host: "{{ pve_api_host }}"
     api_user: "{{ pve_api_user }}"
     api_token_id: "{{ pve_api_token_id }}"
     api_token_secret: "{{ pve_api_token_secret }}"
-    storage: "{{ pbs_storage_name }}"
+    name: "{{ pbs_storage_name }}"
     type: pbs
     content: "{{ pbs_content }}"
-    server: "{{ pbs_server }}"
-    username: "{{ pbs_username }}"
-    password: "{{ pbs_password }}"
-    datastore: "{{ pbs_datastore }}"
-    fingerprint: "{{ pbs_fingerprint }}"
+    nodes: "{{ pve_api_token_nodes }}"
+    pbs_options:
+      server: "{{ pbs_server }}"
+      username: "{{ pbs_username }}"
+      password: "{{ pbs_password }}"
+      datastore: "{{ pbs_datastore }}"
+      fingerprint: "{{ pbs_fingerprint }}"
     state: present
   delegate_to: localhost
   run_once: true

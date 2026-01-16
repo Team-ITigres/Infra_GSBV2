@@ -219,7 +219,7 @@ echo "[+] Configuration du rôle et de l'utilisateur Terraform sur Proxmox..."
 # Vérification/création du rôle TerraformProv
 if ! pveum role list | grep -qw "$USER_ROLE"; then
   echo "[+] Création du rôle $USER_ROLE avec les privilèges nécessaires..."
-  pveum role add "$USER_ROLE" -privs "Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Monitor VM.Migrate VM.PowerMgmt SDN.Use"
+  pveum role add "$USER_ROLE" -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Monitor VM.Migrate VM.PowerMgmt SDN.Use"
   echo "[+] Rôle $USER_ROLE créé avec succès."
 else
   echo "[!] Le rôle $USER_ROLE existe déjà."

@@ -51,6 +51,7 @@
 - name: Add PBS storage to PVE
   hosts: localhost
   connection: local
+  tags: add_pbs
   roles:
     - roles/ProxmoxAddPBS
 

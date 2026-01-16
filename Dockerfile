@@ -31,7 +31,9 @@ RUN mkdir -p /opt/venvs \
     ansible \
     "pywinrm[credssp]" \
     requests-ntlm \
-    paramiko
+    paramiko \
+    proxmoxer \
+    requests
 
 # === Terraform (binaire officiel, version pinée) ===
 ARG TERRAFORM_VERSION=1.7.5
