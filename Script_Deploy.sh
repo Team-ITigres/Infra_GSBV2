@@ -433,6 +433,7 @@ echo "[+] Lancement des playbooks Ansible en mode tmux..."
 ssh -tt -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
   "cd /Infra_GSBV2/Ansible && tmux new-session 'terransible ansible-playbook Install_Linuxs.yml' \; split-window -h 'terransible ansible-playbook Install_Windows.yml'"
 
+echo ""
 echo "✅ Déploiement complet terminé avec succès."
 
 DURATION=$(($(date +%s) - START_TIME))
@@ -440,7 +441,7 @@ MINUTES=$((DURATION / 60))
 SECONDS=$((DURATION % 60))
 
 if [ $MINUTES -gt 0 ]; then
-  echo "Temps de préparation: ${MINUTES} minute(s) ${SECONDS} seconde(s) (${DURATION} secondes au total)"
+  echo "Temps d'exécution: ${MINUTES} minute(s) ${SECONDS} seconde(s) (${DURATION} secondes au total)"
 else
-  echo "Temps de préparation: ${SECONDS} seconde(s)"
+  echo "Temps d'exécution: ${SECONDS} seconde(s)"
 fi
