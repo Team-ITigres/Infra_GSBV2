@@ -12,6 +12,13 @@ http:
 {% for router in traefik_routers %}
     {{ router.service }}:
       loadBalancer:
+{% if router.url.startswith('https://') %}
+        serversTransport: insecureTransport
+{% endif %}
         servers:
           - url: "{{ router.url }}"
 {% endfor %}
+
+  serversTransports:
+    insecureTransport:
+      insecureSkipVerify: true

@@ -47,7 +47,7 @@ traefik_routers:
   - name: pbs
     host: "pbs.gsb.local"
     service: pbs
-    url: "http://172.16.0.254:8007"
+    url: "https://172.16.0.254:8007"
   - name: traefik
     host: "traefik.gsb.local"
     service: traefik
