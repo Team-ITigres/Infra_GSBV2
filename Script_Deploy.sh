@@ -426,16 +426,3 @@ echo "[+] Lancement des playbooks Ansible en mode tmux..."
 # L'option -tt force l'allocation d'un pseudo-terminal même si stdin n'est pas un terminal
 ssh -tt -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
   "cd /Infra_GSBV2/Ansible && tmux new-session 'terransible ansible-playbook Install_Linuxs.yml' \; split-window -h 'terransible ansible-playbook Install_Windows.yml'"
-
-echo ""
-echo "✅ Déploiement complet terminé avec succès."
-
-DURATION=$(($(date +%s) - START_TIME))
-MINUTES=$((DURATION / 60))
-SECONDS=$((DURATION % 60))
-
-if [ $MINUTES -gt 0 ]; then
-  echo "Temps d'exécution: ${MINUTES} minute(s) ${SECONDS} seconde(s) (${DURATION} secondes au total)"
-else
-  echo "Temps d'exécution: ${SECONDS} seconde(s)"
-fi
