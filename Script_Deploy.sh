@@ -426,8 +426,10 @@ ATTEMPT=0
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
   echo "[+] Tentative $((ATTEMPT + 1))/$MAX_ATTEMPTS..."
 
-  if ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
-    "cd /Infra_GSBV2/Ansible && terransible ansible all -m ping" > /dev/null 2>&1; then
+  RESULT=$(ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" root@"$IP" \
+    "cd /Infra_GSBV2/Ansible && terransible ansible all -m ping 2>&1" || echo "FAILED")
+
+  if echo "$RESULT" | grep -q "SUCCESS"; then
     echo "[+] Tous les hôtes sont joignables"
     break
   fi
@@ -436,6 +438,7 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
 
   if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
     echo "[!] Erreur: Impossible de contacter tous les hôtes après $MAX_ATTEMPTS tentatives"
+    echo "$RESULT"
     exit 1
   fi
 
