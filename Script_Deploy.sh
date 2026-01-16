@@ -390,12 +390,6 @@ terransible() {
 }
 FUNCEOF
 
-echo "[+] Ajout des alias pour les playbook Ansible..."
-cat >> /root/.bashrc <<ALIASEOF
-alias apl='ansible-playbook Install_Linuxs.yml'
-alias apw='ansible-playbook Install_Windows.yml'
-ALIASEOF
-
 echo "[+] Chargement de la fonction terransible..."
 source /root/.bashrc
 

@@ -53,6 +53,10 @@ RUN curl -fsSL "https://vault.bitwarden.com/download/?app=cli&platform=linux" \
 # === Répertoires de travail ===
 RUN mkdir -p /work /root/.ssh
 
+# === Alias pour ansible-playbook ===
+RUN echo 'alias apl="ansible-playbook Install_Linuxs.yml"' >> /root/.bashrc
+RUN echo 'alias apw="ansible-playbook Install_Windows.yml"' >> /root/.bashrc
+
 WORKDIR /work
 
 CMD ["bash"]
