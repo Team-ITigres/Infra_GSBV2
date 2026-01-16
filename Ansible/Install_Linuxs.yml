@@ -48,6 +48,12 @@
   roles:
     - roles/ProxmoxBackup
 
+- name: Add PBS storage to PVE
+  hosts: localhost
+  connection: local
+  roles:
+    - roles/ProxmoxAddPBS
+
 - name : Install Pulse Agents
   become: yes
   hosts: linuxs
