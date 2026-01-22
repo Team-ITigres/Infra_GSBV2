@@ -26,7 +26,7 @@ nextcloud_db_password: "Formation13@"
 nextcloud_redis_password: "Formation13@"
 
 # Domaine/IP d'accès (trusted_domains)
-nextcloud_trusted_domain: "nextcloud.gsb.local"
+nextcloud_trusted_domain: "nextcloud.gsb.local, http://172.16.0.254:8081"
 
 # Apps à pré-installer
 nextcloud_apps:

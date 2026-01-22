@@ -59,10 +59,9 @@
     - nextcloud_install.rc != 0
     - "'is not defined' not in nextcloud_install.stderr"
 
-- name: Ajouter le domaine de confiance
+- name: Désactiver la vérification des domaines de confiance
   ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ config:system:set trusted_domains 0 --value='localhost'
-    docker exec -u www-data nextcloud php occ config:system:set trusted_domains 1 --value='{{ nextcloud_trusted_domain }}'
+    docker exec -u www-data nextcloud php occ config:system:set trusted_domains 0 --value='*'
   changed_when: false
 
 - name: Configurer Redis comme cache
