@@ -417,30 +417,7 @@ echo "[+] Installation des rôles Ansible..."
 cd /Infra_GSBV2/Ansible
 terransible ansible-galaxy install -r requirements.yml --force
 
-echo "[+] Attente de la disponibilité des hôtes Ansible..."
-MAX_ATTEMPTS=60
-ATTEMPT=0
-
-while [ \$ATTEMPT -lt \$MAX_ATTEMPTS ]; do
-  echo "[+] Tentative \$((ATTEMPT + 1))/\$MAX_ATTEMPTS..."
-
-  RESULT=\$(cd /Infra_GSBV2/Ansible && terransible ansible all -m ping 2>&1 || echo "FAILED")
-
-  if echo "\$RESULT" | grep -q "SUCCESS"; then
-    echo "[+] Tous les hôtes sont joignables"
-    break
-  fi
-
-  ATTEMPT=\$((ATTEMPT + 1))
-
-  if [ \$ATTEMPT -eq \$MAX_ATTEMPTS ]; then
-    echo "[!] Erreur: Impossible de contacter tous les hôtes après \$MAX_ATTEMPTS tentatives"
-    echo "\$RESULT"
-    exit 1
-  fi
-
-  sleep 5
-done
+sleep 100
 
 EOF
 
