@@ -1,3 +1,13 @@
+- name: Wait for connect 
+  hosts: linuxs
+  gather_facts: no
+  tags: connect
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for:
+        delay: 5
+        timeout: 180
+
 - name: Update 
   hosts: linuxs
   become: yes
