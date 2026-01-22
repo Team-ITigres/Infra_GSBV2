@@ -1,0 +1,51 @@
+---
+# Nextcloud Configuration
+
+# Version de l'image Nextcloud
+nextcloud_version: "29"
+
+# Port d'accès web
+nextcloud_port: "80"
+
+# Répertoire de données Nextcloud sur l'hôte
+nextcloud_datadir: "/srv/nextcloud/data"
+
+# Timezone
+nextcloud_timezone: "Europe/Paris"
+
+# Configuration admin
+nextcloud_admin_user: "nextcloud"
+nextcloud_admin_password: "Formation13@"
+
+# Configuration PostgreSQL
+nextcloud_db_name: "nextcloud"
+nextcloud_db_user: "nextcloud"
+nextcloud_db_password: "Formation13@"
+
+# Configuration Redis (cache)
+nextcloud_redis_password: "Formation13@"
+
+# Domaine/IP d'accès (trusted_domains)
+nextcloud_trusted_domain: "nextcloud.gsb.local"
+
+# Apps à pré-installer
+nextcloud_apps:
+  - calendar
+  - contacts
+  - tasks
+  - notes
+  - richdocuments  # Collabora Online
+
+# Collabora Online
+nextcloud_collabora_enabled: true
+
+# LDAP / Active Directory
+nextcloud_ldap_enabled: true
+nextcloud_ldap_host: "172.16.0.1"
+nextcloud_ldap_port: "389"
+nextcloud_ldap_base_dn: "DC=gsb,DC=local"
+nextcloud_ldap_bind_dn: "CN=nextcloud_bind,OU=Comptes_Services,DC=gsb,DC=local"
+nextcloud_ldap_bind_password: "Formation13@"
+nextcloud_ldap_user_filter: "(&(objectClass=user)(!(objectClass=computer)))"
+nextcloud_ldap_login_filter: "(&(objectClass=user)(|(sAMAccountName=%uid)(mail=%uid)(userPrincipalName=%uid)))"
+nextcloud_ldap_group_filter: "(objectClass=group)"

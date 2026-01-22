@@ -84,3 +84,18 @@
     enabled: true
     description: "Compte de service pour l'authentification LDAP de SFTPGO"
   register: sftpgo_bind_creation
+
+- name: Créer le compte de service Nextcloud pour LDAP
+  microsoft.ad.user:
+    name: nextcloud_bind
+    firstname: Nextcloud
+    surname: Service Account
+    upn: nextcloud_bind@gsb.local
+    password: "{{ nextcloud_ldap_password | default('Formation13@') }}"
+    state: present
+    path: "OU=Comptes_Services,DC=gsb,DC=local"
+    password_never_expires: true
+    user_cannot_change_password: true
+    enabled: true
+    description: "Compte de service pour l'authentification LDAP de nextcloud"
+  register: nextcloud_bind_creation

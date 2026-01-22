@@ -1,0 +1,72 @@
+services:
+  nextcloud:
+    image: nextcloud:{{ nextcloud_version }}
+    container_name: nextcloud
+    restart: unless-stopped
+    ports:
+      - "{{ nextcloud_port }}:80"
+    environment:
+      - TZ={{ nextcloud_timezone }}
+      - POSTGRES_HOST=nextcloud-db
+      - POSTGRES_DB={{ nextcloud_db_name }}
+      - POSTGRES_USER={{ nextcloud_db_user }}
+      - POSTGRES_PASSWORD={{ nextcloud_db_password }}
+      - NEXTCLOUD_ADMIN_USER={{ nextcloud_admin_user }}
+      - NEXTCLOUD_ADMIN_PASSWORD={{ nextcloud_admin_password }}
+      - NEXTCLOUD_TRUSTED_DOMAINS={{ nextcloud_trusted_domain }}
+      - REDIS_HOST=nextcloud-redis
+      - REDIS_HOST_PASSWORD={{ nextcloud_redis_password }}
+      - NEXTCLOUD_DATA_DIR=/var/www/html/data
+    volumes:
+      - nextcloud-html:/var/www/html
+      - {{ nextcloud_datadir }}:/var/www/html/data
+    depends_on:
+      nextcloud-db:
+        condition: service_healthy
+      nextcloud-redis:
+        condition: service_started
+
+  nextcloud-db:
+    image: postgres:16-alpine
+    container_name: nextcloud-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB={{ nextcloud_db_name }}
+      - POSTGRES_USER={{ nextcloud_db_user }}
+      - POSTGRES_PASSWORD={{ nextcloud_db_password }}
+    volumes:
+      - nextcloud-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ nextcloud_db_user }} -d {{ nextcloud_db_name }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  nextcloud-redis:
+    image: redis:alpine
+    container_name: nextcloud-redis
+    restart: unless-stopped
+    command: redis-server --requirepass {{ nextcloud_redis_password }}
+    volumes:
+      - nextcloud-redis:/data
+
+{% if nextcloud_collabora_enabled %}
+  collabora:
+    image: collabora/code:latest
+    container_name: nextcloud-collabora
+    restart: unless-stopped
+    ports:
+      - "9980:9980"
+    environment:
+      - aliasgroup1=http://{{ nextcloud_trusted_domain }}:{{ nextcloud_port }}
+      - extra_params=--o:ssl.enable=false --o:ssl.termination=false
+      - username=admin
+      - password={{ nextcloud_admin_password }}
+    cap_add:
+      - MKNOD
+{% endif %}
+
+volumes:
+  nextcloud-html:
+  nextcloud-db:
+  nextcloud-redis:

@@ -1,11 +1,15 @@
 - name: Update 
   hosts: linuxs
   become: yes
+  tags: 
+    - update
+    - docker 
   roles: 
     - roles/MAJ  
 
 - name: Install Docker
   become: yes
+  tags: docker
   hosts: linuxs !ProxmoxBackup
   roles:
     - roles/Install_Docker
@@ -54,6 +58,13 @@
   tags: add_pbs
   roles:
     - roles/ProxmoxAddPBS
+
+- name: Install Nexcloud
+  become: yes
+  hosts: Nextcloud
+  tags: nextcloud
+  roles:
+    - roles/Nextcloud
 
 - name : Install Pulse Agents
   become: yes

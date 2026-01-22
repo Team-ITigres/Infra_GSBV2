@@ -54,6 +54,17 @@ lxc_linux = {
     network_bridge = "DMZ"
     }
 
+    "Nextcloud" = {
+    lxc_id = 121
+    name = "Nextcloud"
+    cores = 2
+    memory = 2048
+    ipconfig0 = "172.16.69.3/29"
+    gw = "172.16.69.1"
+    disk_size = 20
+    network_bridge = "DMZ"
+    }
+
     "ProxmoxBackup" = {
     lxc_id = 130
     name = "ProxmoxBackup"
