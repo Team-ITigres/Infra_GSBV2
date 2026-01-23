@@ -6,7 +6,7 @@
     - name: Wait for SSH to be available
       ansible.builtin.wait_for:
         delay: 5
-        timeout: 180
+        timeout: 10
 
 - name: Update 
   hosts: linuxs

@@ -2,6 +2,19 @@
 ---
 # tasks file for roles/ProxmoxBackup
 
+- name: Ajouter le dépôt Proxmox Backup Server
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/proxmox-release.gpg] {{ proxmox_repo_url }} {{ proxmox_release }} {{ proxmox_repo_channel }}"
+    state: present
+    filename: pbs-repo
+
+- name: Désactiver le dépôt enterprise PBS en ajoutant Enabled false
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/pbs-enterprise.sources
+    line: 'Enabled: false'
+    create: no
+  failed_when: false
+
 - name: Mettre à jour le cache APT
   ansible.builtin.apt:
     update_cache: yes
@@ -19,20 +32,6 @@
     url: "{{ proxmox_gpg_key }}"
     dest: /usr/share/keyrings/proxmox-release.gpg
     mode: '0644'
-
-- name: Ajouter le dépôt Proxmox Backup Server
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/proxmox-release.gpg] {{ proxmox_repo_url }} {{ proxmox_release }} {{ proxmox_repo_channel }}"
-    state: present
-    filename: pbs-repo
-
-- name: Désactiver le dépôt enterprise PBS
-  ansible.builtin.lineinfile:
-    path: /etc/apt/sources.list.d/pbs-enterprise.sources
-    regexp: '^Enabled:'
-    line: 'Enabled: false'
-    insertafter: EOF
-  failed_when: false
 
 - name: Mettre à jour le cache APT après ajout du dépôt
   ansible.builtin.apt:
