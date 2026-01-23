@@ -28,10 +28,10 @@
 
 - name: Attendre que le conteneur Nextcloud soit prêt
   ansible.builtin.shell: |
-    docker exec nextcloud ls /var/www/html/occ
+    docker exec nextcloud ls /var/www/html/lib/versioncheck.php
   register: nextcloud_ready
   until: nextcloud_ready.rc == 0
-  retries: 30
+  retries: 60
   delay: 5
   changed_when: false
 
