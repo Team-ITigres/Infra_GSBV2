@@ -1,5 +1,13 @@
+#SPDX-License-Identifier: MIT-0
 ---
+# handlers file for roles/Nextcloud
+
 - name: Restart Nextcloud
   community.docker.docker_compose_v2:
     project_src: /srv/nextcloud
     state: restarted
+
+- name: Reload Nextcloud
+  ansible.builtin.command:
+    cmd: docker exec -u www-data {{ nextcloud_container_name }} php occ maintenance:mode --off
+  changed_when: false

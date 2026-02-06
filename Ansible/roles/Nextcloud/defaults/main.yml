@@ -1,51 +1,41 @@
+#SPDX-License-Identifier: MIT-0
 ---
+# defaults file for roles/Nextcloud
+
 # Nextcloud Configuration
+nextcloud_version: "30"
+nextcloud_container_name: "nextcloud"
+nextcloud_port: 8080
 
-# Version de l'image Nextcloud
-nextcloud_version: "29"
+# Database Configuration
+nextcloud_db_type: "mysql"
+nextcloud_db_container_name: "nextcloud-db"
+mariadb_version: "11.2"
+nextcloud_db_name: "nextcloud"
+nextcloud_db_user: "nextcloud"
+nextcloud_db_password: "Nextcloud_DB_Passw0rd!"
+nextcloud_db_root_password: "Nextcloud_Root_Passw0rd!"
 
-# Port d'accès web
-nextcloud_port: "80"
+# Redis Configuration
+nextcloud_redis_container_name: "nextcloud-redis"
+redis_version: "7-alpine"
 
-# Répertoire de données Nextcloud sur l'hôte
-nextcloud_datadir: "/srv/nextcloud/data"
-
-# Timezone
-nextcloud_timezone: "Europe/Paris"
-
-# Configuration admin
+# Admin Configuration
 nextcloud_admin_user: "nextcloud"
 nextcloud_admin_password: "Formation13@"
 
-# Configuration PostgreSQL
-nextcloud_db_name: "nextcloud"
-nextcloud_db_user: "nextcloud"
-nextcloud_db_password: "Formation13@"
-
-# Configuration Redis (cache)
-nextcloud_redis_password: "Formation13@"
-
-# Domaine/IP d'accès (trusted_domains)
-nextcloud_trusted_domain: "nextcloud.gsb.local, http://172.16.0.254:8081"
-
-# Apps à pré-installer
-nextcloud_apps:
-  - calendar
-  - contacts
-  - tasks
-  - notes
-  - richdocuments  # Collabora Online
-
-# Collabora Online
-nextcloud_collabora_enabled: true
-
-# LDAP / Active Directory
+# LDAP Configuration
 nextcloud_ldap_enabled: true
 nextcloud_ldap_host: "172.16.0.1"
 nextcloud_ldap_port: "389"
 nextcloud_ldap_base_dn: "DC=gsb,DC=local"
 nextcloud_ldap_bind_dn: "CN=nextcloud_bind,OU=Comptes_Services,DC=gsb,DC=local"
-nextcloud_ldap_bind_password: "Formation13@"
-nextcloud_ldap_user_filter: "(&(objectClass=user)(!(objectClass=computer)))"
-nextcloud_ldap_login_filter: "(&(objectClass=user)(|(sAMAccountName=%uid)(mail=%uid)(userPrincipalName=%uid)))"
-nextcloud_ldap_group_filter: "(objectClass=group)"
+nextcloud_ldap_bind_password: "{{ nextcloud_ldap_password | default('Formation13@') }}"
+nextcloud_ldap_user_filter: "(&(objectClass=user)(objectCategory=person))"
+nextcloud_ldap_login_filter: "(&(objectClass=user)(objectCategory=person)(sAMAccountName=%uid))"
+nextcloud_ldap_group_filter: "(&(objectClass=group))"
+nextcloud_ldap_user_display_name: "displayName"
+nextcloud_ldap_group_display_name: "cn"
+
+# Domain
+nextcloud_domain: "gsb.local"

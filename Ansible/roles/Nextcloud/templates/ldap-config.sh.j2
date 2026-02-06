@@ -1,0 +1,85 @@
+#!/bin/bash
+# Script de configuration LDAP pour Nextcloud
+# Basé sur la documentation officielle: https://docs.nextcloud.com/server/stable/admin_manual/configuration_user/user_auth_ldap.html
+
+set -e
+
+# Attendre que Nextcloud soit prêt
+echo "Attente du démarrage de Nextcloud..."
+sleep 30
+
+# Activer l'application LDAP
+echo "Activation de l'application LDAP..."
+docker exec -u www-data {{ nextcloud_container_name }} php occ app:enable user_ldap
+
+# Vérifier si une configuration LDAP existe déjà
+EXISTING_CONFIG=$(docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:show-config 2>/dev/null | grep -oP 's\d+' | head -1 || echo "")
+
+if [ -n "$EXISTING_CONFIG" ]; then
+    echo "Configuration LDAP existante trouvée: $EXISTING_CONFIG"
+    LDAP_CONFIG_ID="$EXISTING_CONFIG"
+else
+    # Créer une nouvelle configuration LDAP
+    echo "Création de la configuration LDAP..."
+    LDAP_CONFIG_ID=$(docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:create-empty-config | grep -oP 's\d+')
+    echo "ID de configuration LDAP créé: $LDAP_CONFIG_ID"
+fi
+
+# Configuration du serveur LDAP
+echo "Configuration du serveur LDAP..."
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapHost "{{ nextcloud_ldap_host }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapPort "{{ nextcloud_ldap_port }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapBase "{{ nextcloud_ldap_base_dn }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapAgentName "{{ nextcloud_ldap_bind_dn }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapAgentPassword "{{ nextcloud_ldap_bind_password }}"
+
+# Configuration des utilisateurs
+echo "Configuration des filtres utilisateurs..."
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapUserFilter "{{ nextcloud_ldap_user_filter }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapUserFilterMode "0"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapLoginFilter "{{ nextcloud_ldap_login_filter }}"
+
+# Configuration des groupes
+echo "Configuration des groupes..."
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapGroupFilter "{{ nextcloud_ldap_group_filter }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapGroupFilterMode "0"
+
+# Configuration des attributs
+echo "Configuration des attributs..."
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapUserDisplayName "{{ nextcloud_ldap_user_display_name }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapGroupDisplayName "{{ nextcloud_ldap_group_display_name }}"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapEmailAttribute "mail"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapUserFilterObjectclass "user"
+
+# Configuration Active Directory spécifique
+echo "Configuration Active Directory..."
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapConfigurationActive "1"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapExpertUsernameAttr "sAMAccountName"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapExpertUUIDUserAttr "objectGUID"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapExpertUUIDGroupAttr "objectGUID"
+
+# Configuration de la recherche
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapAttributesForUserSearch "sAMAccountName;cn;displayName;mail"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapAttributesForGroupSearch "cn"
+
+# Configuration du cache
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapCacheTTL "600"
+
+# Configuration de la pagination
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapPagingSize "500"
+
+# Désactiver TLS (non nécessaire pour LDAP simple)
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:set-config $LDAP_CONFIG_ID ldapTLS "0"
+
+# Test de la connexion
+echo "Test de la connexion LDAP..."
+if ! docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:test-config $LDAP_CONFIG_ID; then
+    echo "ERREUR: La connexion LDAP a échoué!"
+    exit 1
+fi
+
+# Afficher la configuration
+echo "Configuration LDAP complète:"
+docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:show-config $LDAP_CONFIG_ID
+
+echo "Configuration LDAP terminée avec succès!"

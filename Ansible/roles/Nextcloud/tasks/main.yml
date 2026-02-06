@@ -1,17 +1,12 @@
+#SPDX-License-Identifier: MIT-0
 ---
+# tasks file for roles/Nextcloud
+
 - name: Créer le dossier Nextcloud
   ansible.builtin.file:
     path: /srv/nextcloud
     state: directory
     mode: '0755'
-
-- name: Créer le dossier de données Nextcloud
-  ansible.builtin.file:
-    path: "{{ nextcloud_datadir }}"
-    state: directory
-    mode: '0755'
-    owner: '33'
-    group: '33'
 
 - name: Déployer le docker-compose.yml pour Nextcloud
   ansible.builtin.template:
@@ -26,117 +21,61 @@
     state: present
     recreate: "{{ 'always' if nextcloud_docker_compose_deployed.changed else 'never' }}"
 
-- name: Attendre que le conteneur Nextcloud soit prêt
-  ansible.builtin.shell: |
-    docker exec nextcloud ls /var/www/html/lib/versioncheck.php
-  register: nextcloud_ready
-  until: nextcloud_ready.rc == 0
-  retries: 60
-  delay: 5
-  changed_when: false
+- name: Attendre que Nextcloud soit complètement démarré
+  ansible.builtin.uri:
+    url: "http://localhost:{{ nextcloud_port }}/status.php"
+    status_code: 200
+    timeout: 5
+  register: nextcloud_health_check
+  until: nextcloud_health_check.status == 200
+  retries: 30
+  delay: 10
 
-- name: Vérifier si Nextcloud est déjà installé
-  ansible.builtin.shell: |
-    docker exec nextcloud php occ status 2>/dev/null | grep -q "installed: true"
-  register: nextcloud_already_installed
-  failed_when: false
-  changed_when: false
+- name: Déployer le script de configuration LDAP
+  ansible.builtin.template:
+    src: ldap-config.sh.j2
+    dest: /srv/nextcloud/ldap-config.sh
+    mode: '0755'
+  when: nextcloud_ldap_enabled | default(true)
 
-- name: Installer Nextcloud via occ
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ maintenance:install \
-      --database="pgsql" \
-      --database-host="nextcloud-db" \
-      --database-name="{{ nextcloud_db_name }}" \
-      --database-user="{{ nextcloud_db_user }}" \
-      --database-pass="{{ nextcloud_db_password }}" \
-      --admin-user="{{ nextcloud_admin_user }}" \
-      --admin-pass="{{ nextcloud_admin_password }}" \
-      --data-dir="/var/www/html/data"
-  when: nextcloud_already_installed.rc != 0
-  register: nextcloud_install
-  failed_when:
-    - nextcloud_install.rc != 0
-    - "'is not defined' not in nextcloud_install.stderr"
+- name: Exécuter la configuration LDAP
+  ansible.builtin.command:
+    cmd: /srv/nextcloud/ldap-config.sh
+  register: ldap_config_result
+  changed_when: "'Configuration LDAP terminée avec succès' in ldap_config_result.stdout"
+  when: nextcloud_ldap_enabled | default(true)
 
-- name: Désactiver la vérification des domaines de confiance
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ config:system:set trusted_domains 0 --value='*'
-  changed_when: false
+- name: Afficher le résultat de la configuration LDAP
+  ansible.builtin.debug:
+    var: ldap_config_result.stdout_lines
+  when:
+    - nextcloud_ldap_enabled | default(true)
+    - ldap_config_result is defined
 
-- name: Configurer Redis comme cache
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ config:system:set memcache.local --value='\OC\Memcache\APCu'
-    docker exec -u www-data nextcloud php occ config:system:set memcache.distributed --value='\OC\Memcache\Redis'
-    docker exec -u www-data nextcloud php occ config:system:set memcache.locking --value='\OC\Memcache\Redis'
-    docker exec -u www-data nextcloud php occ config:system:set redis host --value='nextcloud-redis'
-    docker exec -u www-data nextcloud php occ config:system:set redis port --value='6379'
-    docker exec -u www-data nextcloud php occ config:system:set redis password --value='{{ nextcloud_redis_password }}'
-  changed_when: false
-
-- name: Installer les apps Nextcloud
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ app:install {{ item }} || true
-    docker exec -u www-data nextcloud php occ app:enable {{ item }}
-  loop: "{{ nextcloud_apps }}"
-  register: app_install
-  changed_when: "'enabled' in app_install.stdout"
-  failed_when: false
-
-- name: Configurer Collabora Online dans Nextcloud
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ config:app:set richdocuments wopi_url --value='http://{{ nextcloud_trusted_domain }}:9980'
-    docker exec -u www-data nextcloud php occ config:app:set richdocuments public_wopi_url --value='http://{{ nextcloud_trusted_domain }}:9980'
-    docker exec -u www-data nextcloud php occ richdocuments:activate-config
-  when: nextcloud_collabora_enabled
-  changed_when: false
-  failed_when: false
-
-- name: Configurer les paramètres de base
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ config:system:set default_phone_region --value='FR'
-    docker exec -u www-data nextcloud php occ config:system:set default_language --value='fr'
-    docker exec -u www-data nextcloud php occ config:system:set default_locale --value='fr_FR'
-    docker exec -u www-data nextcloud php occ background:cron
-  changed_when: false
-
-- name: Installer et activer l'app LDAP
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ app:install user_ldap || true
-    docker exec -u www-data nextcloud php occ app:enable user_ldap
-  when: nextcloud_ldap_enabled
-  failed_when: false
-  changed_when: false
-
-- name: Créer la configuration LDAP
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ ldap:create-empty-config
-  when: nextcloud_ldap_enabled
-  register: ldap_config_created
-  failed_when: false
-  changed_when: "'created' in ldap_config_created.stdout"
-
-- name: Configurer la connexion LDAP/AD
-  ansible.builtin.shell: |
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapHost '{{ nextcloud_ldap_host }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapPort '{{ nextcloud_ldap_port }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapBase '{{ nextcloud_ldap_base_dn }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapAgentName '{{ nextcloud_ldap_bind_dn }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapAgentPassword '{{ nextcloud_ldap_bind_password }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapUserFilter '{{ nextcloud_ldap_user_filter }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapLoginFilter '{{ nextcloud_ldap_login_filter }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapGroupFilter '{{ nextcloud_ldap_group_filter }}'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapUserDisplayName 'displayName'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapEmailAttribute 'mail'
-    docker exec -u www-data nextcloud php occ ldap:set-config s01 ldapConfigurationActive '1'
-  when: nextcloud_ldap_enabled
-  changed_when: false
-
-- name: Afficher les informations d'accès
+- name: Afficher les informations de connexion
   ansible.builtin.debug:
     msg:
-      - "Nextcloud est déployé avec succès !"
-      - "URL d'accès: http://{{ ansible_host }}:{{ nextcloud_port }}"
-      - "Utilisateur admin: {{ nextcloud_admin_user }}"
-      - "Mot de passe: {{ nextcloud_admin_password }}"
-      - "Apps installées: {{ nextcloud_apps | join(', ') }}"
+      - "╔════════════════════════════════════════════════════════════════╗"
+      - "║           Nextcloud déployé avec succès !                     ║"
+      - "╚════════════════════════════════════════════════════════════════╝"
+      - ""
+      - "📍 URL d'accès: http://{{ ansible_host }}:{{ nextcloud_port }}"
+      - ""
+      - "👤 Compte administrateur local:"
+      - "   - Utilisateur: {{ nextcloud_admin_user }}"
+      - "   - Mot de passe: {{ nextcloud_admin_password }}"
+      - ""
+      - "🔐 Authentification LDAP/Active Directory configurée:"
+      - "   - Serveur AD: {{ nextcloud_ldap_host }}"
+      - "   - Base DN: {{ nextcloud_ldap_base_dn }}"
+      - "   - Domaine: {{ nextcloud_domain }}"
+      - ""
+      - "🔑 Connexion avec les utilisateurs Active Directory:"
+      - "   - Format: utilisateur (sAMAccountName)"
+      - "   - Exemple: jdupont"
+      - "   - Mot de passe: mot de passe Active Directory"
+      - ""
+      - "💡 Commandes utiles:"
+      - "   - Lister les utilisateurs LDAP: docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:show-remnants"
+      - "   - Tester la config LDAP: docker exec -u www-data {{ nextcloud_container_name }} php occ ldap:test-config s01"
+      - "   - Voir les logs: docker logs {{ nextcloud_container_name }}"
