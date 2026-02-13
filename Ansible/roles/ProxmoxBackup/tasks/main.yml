@@ -2,18 +2,10 @@
 ---
 # tasks file for roles/ProxmoxBackup
 
-- name: Ajouter le dépôt Proxmox Backup Server
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/proxmox-release.gpg] {{ proxmox_repo_url }} {{ proxmox_release }} {{ proxmox_repo_channel }}"
-    state: present
-    filename: pbs-repo
-
-- name: Désactiver le dépôt enterprise PBS en ajoutant Enabled false
-  ansible.builtin.lineinfile:
-    path: /etc/apt/sources.list.d/pbs-enterprise.sources
-    line: 'Enabled: false'
-    create: no
-  failed_when: false
+- name: Supprimer le dépôt enterprise PBS dès le début (non accessible sans souscription)
+  ansible.builtin.command:
+    cmd: rm -f /etc/apt/sources.list.d/pbs-enterprise.sources
+  changed_when: true
 
 - name: Mettre à jour le cache APT
   ansible.builtin.apt:
@@ -33,6 +25,16 @@
     dest: /usr/share/keyrings/proxmox-release.gpg
     mode: '0644'
 
+- name: Ajouter le dépôt Proxmox Backup Server (format deb822)
+  ansible.builtin.deb822_repository:
+    name: pbs-repo
+    types: deb
+    uris: "{{ proxmox_repo_url }}"
+    suites: "{{ proxmox_release }}"
+    components: "{{ proxmox_repo_channel }}"
+    signed_by: /usr/share/keyrings/proxmox-release.gpg
+    state: present
+
 - name: Mettre à jour le cache APT après ajout du dépôt
   ansible.builtin.apt:
     update_cache: yes
@@ -41,6 +43,11 @@
   ansible.builtin.apt:
     name: proxmox-backup-server
     state: present
+
+- name: Supprimer le dépôt enterprise PBS après installation (non accessible sans souscription)
+  ansible.builtin.command:
+    cmd: rm -f /etc/apt/sources.list.d/pbs-enterprise.sources
+  changed_when: true
 
 - name: Créer le dossier du datastore
   ansible.builtin.file:
