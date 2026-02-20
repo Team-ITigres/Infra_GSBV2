@@ -2,14 +2,17 @@
 # Playbook orchestrateur qui exécute tout dans le bon ordre
 # Collecte d'abord les variables de manière interactive puis exécute tous les playbooks
 
-- name: Collecte des variables
-  import_playbook: collecte_variables.yml
+# - name: Collecte des variables
+#   import_playbook: collecte_variables.yml
 
 - name: Configuration Active Directory
   import_playbook: playbooks/Active_directory.yml
 
 - name: Création de répertoires AD
   import_playbook: playbooks/dir_create_ad.yml
+
+- name: Création de dossier Nextcloud
+  import_playbook: playbooks/nextcloud_create_folder.yml
 
 - name: Mappage de lecteur
   import_playbook: playbooks/mappage_lecteur.yml

@@ -1,6 +1,6 @@
 - name: Bloquer des domaines dans AdGuard Home
   hosts: Adguard
-  gather_facts: yes
+  gather_facts: true
 
   vars_files:
     - ../vars/generated_vars.yml
@@ -21,7 +21,7 @@
 
     - name: Verifier si le fichier de configuration existe
       ansible.builtin.stat:
-        path: /opt/AdGuardHome/AdGuardHome.yaml
+        path: /srv/adguard/adguard-conf/AdGuardHome.yaml
       register: config_file
 
     - name: Echouer si le fichier de configuration n'existe pas
@@ -31,14 +31,14 @@
 
     - name: Creer une sauvegarde de la configuration actuelle
       ansible.builtin.copy:
-        src: /opt/AdGuardHome/AdGuardHome.yaml
-        dest: "/opt/AdGuardHome/AdGuardHome.yaml.backup.{{ ansible_date_time.epoch }}"
+        src: /srv/adguard/adguard-conf/AdGuardHome.yaml
+        dest: "/srv/adguard/adguard-conf/AdGuardHome.yaml.backup.{{ ansible_date_time.epoch }}"
         remote_src: yes
         mode: '0600'
 
     - name: Ajouter les domaines a la section blocked_hosts (avec syntaxe wildcard)
       ansible.builtin.lineinfile:
-        path: /opt/AdGuardHome/AdGuardHome.yaml
+        path: /srv/adguard/adguard-conf/AdGuardHome.yaml
         insertafter: '^  blocked_hosts:'
         line: "    - ||{{ item }}^"
         state: present
@@ -46,13 +46,15 @@
       register: domains_added
 
     - name: Redemarrer AdGuard Home si necessaire
-      ansible.builtin.systemd:
-        name: AdGuardHome
-        state: restarted
+      community.docker.docker_container:
+        name: adguard
+        state: started
+        restart: yes
       when: domains_added is changed
 
     - name: Attendre le redemarrage d'AdGuard
       ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
         port: 53
         delay: 2
         timeout: 30

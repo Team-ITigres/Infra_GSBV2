@@ -1,0 +1,92 @@
+---
+- name: Création d'un dossier Nextcloud avec permissions groupe AD
+  hosts: Nextcloud
+  gather_facts: false
+
+  vars_files:
+    - ../vars/generated_vars.yml
+    - ../roles/Nextcloud/defaults/main.yml
+
+  tasks:
+    - name: Ignorer si la création de dossier Nextcloud n'est pas demandée
+      ansible.builtin.meta: end_play
+      when: create_nextcloud_folder != "oui"
+
+    - name: Vérifier que les variables nécessaires sont définies
+      ansible.builtin.assert:
+        that:
+          - nextcloud_folder_name is defined
+          - nextcloud_folder_name | length > 0
+          - group_name is defined
+          - group_name | length > 0
+        fail_msg: "Les variables 'nextcloud_folder_name' et 'group_name' doivent être définies."
+
+    - name: Créer le dossier physiquement dans le conteneur Nextcloud
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          mkdir -p "/var/www/html/data/{{ nextcloud_admin_user }}/files/{{ nextcloud_folder_name }}"
+      register: mkdir_result
+      changed_when: mkdir_result.rc == 0
+
+    - name: Scanner le dossier pour l'indexer dans Nextcloud
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          php occ files:scan
+          --path="{{ nextcloud_admin_user }}/files/{{ nextcloud_folder_name }}"
+      register: occ_scan
+      changed_when: occ_scan.rc == 0
+
+    - name: S'assurer que ldapGroupMemberAssocAttr est configuré pour AD
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          php occ ldap:set-config s01 ldapGroupMemberAssocAttr "member"
+      changed_when: false
+      failed_when: false
+
+    - name: Partager le dossier avec le groupe AD via l'API OCS (permissions modification)
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - -u
+          - www-data
+          - "{{ nextcloud_container_name }}"
+          - curl
+          - -s
+          - -X
+          - POST
+          - -H
+          - "OCS-APIRequest: true"
+          - -H
+          - "Content-Type: application/x-www-form-urlencoded"
+          - -u
+          - "{{ nextcloud_admin_user }}:{{ nextcloud_admin_password }}"
+          - --data-urlencode
+          - "path=/{{ nextcloud_folder_name }}"
+          - --data-urlencode
+          - "shareType=1"
+          - --data-urlencode
+          - "shareWith={{ group_name }}"
+          - --data-urlencode
+          - "permissions=15"
+          - "http://localhost/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json"
+      register: occ_share
+      changed_when: '"statuscode\":200" in occ_share.stdout or "statuscode\":100" in occ_share.stdout'
+      failed_when: occ_share.rc != 0 or "status\":\"ok\"" not in occ_share.stdout
+
+    - name: Afficher la réponse de l'API si erreur
+      ansible.builtin.debug:
+        msg: "Réponse API OCS : {{ occ_share.stdout }}"
+      when: '"status\":\"ok\"" not in occ_share.stdout'
+
+    - name: Résumé de la création du dossier Nextcloud
+      ansible.builtin.debug:
+        msg:
+          - "Dossier Nextcloud créé et partagé avec succès !"
+          - "  - Dossier      : /{{ nextcloud_folder_name }}"
+          - "  - Propriétaire : {{ nextcloud_admin_user }}"
+          - "  - Groupe AD    : {{ group_name }}"
+          - "  - Permissions  : Lecture + Écriture + Création + Suppression (15)"

@@ -1,7 +1,10 @@
 ---
 - name: Creer une GPO pour bloquer l'acces au CMD
   hosts: WinSRV01
-  gather_facts: no
+  gather_facts: false
+
+  vars_files:
+    - ../vars/generated_vars.yml
 
   tasks:
     - name: Verifier que les variables sont definies

@@ -1,7 +1,7 @@
 ---
 - name: Configuration VLAN Planet
   hosts: switchs
-  gather_facts: no
+  gather_facts: false
 
   vars_files:
     - ../vars/generated_vars.yml
@@ -9,8 +9,8 @@
   tasks:
     - name: Charger les ports du switch courant
       set_fact:
-        access_ports: "{{ switch_ports[inventory_hostname].access_ports }}"
-        trunk_ports: "{{ switch_ports[inventory_hostname].trunk_ports }}"
+        access_ports: "{{ switch_ports[inventory_hostname].access_ports | default([]) or [] }}"
+        trunk_ports: "{{ switch_ports[inventory_hostname].trunk_ports | default([]) or [] }}"
 
     - name: Configurer VLAN et ports (Planet robuste)
       ansible.builtin.shell: |
@@ -20,6 +20,8 @@
 
         spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ ansible_user }}@{{ ansible_host }}
 
+        expect "continue..."
+        send "\r"
         expect "Username:"
         send "{{ ansible_user }}\r"
         expect "Password:"

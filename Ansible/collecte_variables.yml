@@ -85,6 +85,10 @@
       prompt: "Veux-tu créer une règle de redirection de port (NAT) ? (oui/non)"
       private: no
 
+    - name: create_nextcloud_folder
+      prompt: "Veux-tu créer un dossier sur Nextcloud ? (oui/non)"
+      private: no
+
   tasks:
     ##################################################################
     # PARE-FEU - QUESTIONS CONDITIONNELLES
@@ -182,6 +186,25 @@
         nat_forward_to_port: ""
       when: nat_rule != "oui"
 
+    ##################################################################
+    # NEXTCLOUD - CRÉATION DE DOSSIER CONDITIONNELLE
+    ##################################################################
+    - name: Collecter le nom du dossier Nextcloud si nécessaire
+      block:
+        - name: Demander le nom du dossier Nextcloud
+          ansible.builtin.pause:
+            prompt: "Nom du dossier à créer sur Nextcloud (ex: Comptabilite)"
+          register: nc_folder_input
+
+        - name: Enregistrer le nom du dossier Nextcloud
+          ansible.builtin.set_fact:
+            nextcloud_folder_name: "{{ nc_folder_input.user_input | trim }}"
+      when: create_nextcloud_folder == "oui"
+
+    - name: Initialiser le nom du dossier Nextcloud vide si non utilisé
+      ansible.builtin.set_fact:
+        nextcloud_folder_name: ""
+      when: create_nextcloud_folder != "oui"
 
     ##################################################################
     # USERS AD
@@ -192,7 +215,7 @@
 
     - name: Collecter les informations utilisateurs
       ansible.builtin.pause:
-        prompt: "Utilisateur {{ item }} - Format: prenom,nom,username,motdepasse"
+        prompt: "Utilisateur {{ item }} - Format: prenom,nom,username,motdepasse,email"
       loop: "{{ range(1, user_count | int + 1) | list }}"
       register: collected_users
 
@@ -206,6 +229,7 @@
           lastname: "{{ parts[1] | trim }}"
           username: "{{ parts[2] | trim }}"
           password: "{{ parts[3] | trim }}"
+          email: "{{ parts[4] | trim }}"
       loop: "{{ collected_users.results }}"
 
     ##################################################################
@@ -385,12 +409,18 @@
           nat_forward_to_port: "{{ nat_forward_to_port }}"
           {% endif %}
 
+          create_nextcloud_folder: "{{ create_nextcloud_folder }}"
+          {% if create_nextcloud_folder == "oui" %}
+          nextcloud_folder_name: "{{ nextcloud_folder_name }}"
+          {% endif %}
+
           users:
           {% for u in users %}
             - firstname: "{{ u.firstname }}"
               lastname: "{{ u.lastname }}"
               username: "{{ u.username }}"
               password: "{{ u.password }}"
+              email: "{{ u.email }}"
           {% endfor %}
 
           domains:
@@ -401,11 +431,11 @@
           switch_ports:
           {% for sw_name, ports in switch_ports.items() %}
             {{ sw_name }}:
-              access_ports:
+              access_ports: {{ ports.access_ports if ports.access_ports else '[]' }}
           {% for p in ports.access_ports %}
                 - "{{ p }}"
           {% endfor %}
-              trunk_ports:
+              trunk_ports: {{ ports.trunk_ports if ports.trunk_ports else '[]' }}
           {% for p in ports.trunk_ports %}
                 - "{{ p }}"
           {% endfor %}

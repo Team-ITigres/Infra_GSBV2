@@ -1,57 +1,56 @@
-ou_name: "IT"
-group_name: "g_it"
+ou_name: "Support Client"
+group_name: "grp_support_client"
 ou_path: "DC=gsb,DC=local"
-folder_name: "Partage_IT"
-drive_letter: "I"
-block_cmd: "non"
-block_control_panel: "non"
+folder_name: "Support_Client"
+drive_letter: "S"
+block_cmd: "oui"
+block_control_panel: "oui"
 
-vlan_id: 110
-vlan_name: "IT"
+vlan_id: 78
+vlan_name: "Support_Client"
 
-id_vif: "110"
-ip_vif: "192.168.110.30/27"
-dhcp_start: "192.168.110.5"
-dhcp_stop: "192.168.110.29"
-dhcp_gateway: "192.168.110.30"
+id_vif: "78"
+ip_vif: "192.168.78.254/24"
+dhcp_start: "192.168.78.10"
+dhcp_stop: "192.168.78.100"
+dhcp_gateway: "192.168.78.254"
 dhcp_dns: "172.16.0.3"
 
 firewall_rule: "oui"
-vlan_source: "eth3"
-vlan_dest: "300"
-service: "icmp"
-description: "Blocage ICMP depuis eth3 vers VLAN 300"
+vlan_source: "78"
+vlan_dest: "99"
+service: "all"
+description: "Block vlan admin"
 
-nat_rule: "oui"
-nat_description: "Acces SFTPGO"
-nat_source_network: "172.16.0.0/24"
-nat_destination_ip: "172.16.0.254"
-nat_destination_port: "8080"
-nat_forward_to_ip: "172.16.69.2"
-nat_forward_to_port: "8080"
+nat_rule: "non"
+
+create_nextcloud_folder: "oui"
+nextcloud_folder_name: "Support_Client"
 
 users:
-  - firstname: "Julien"
-    lastname: "BENOIT"
-    username: "julien.benoit"
+  - firstname: "Léa"
+    lastname: "Martin"
+    username: "lea.martin"
     password: "Formation13@"
-  - firstname: "Pauline"
-    lastname: "MARTIN"
-    username: "pauline.martin"
+    email: "lea.martin@gsb.local"
+  - firstname: "Théo"
+    lastname: "Bertrand"
+    username: "theo.bertrand"
     password: "Formation13@"
+    email: "theo.bertrand@gsb.local"
 
 domains:
-  - "franceinfo.fr"
-  - "facebook.com"
+  - "betclic.fr"
 
 switch_ports:
   Sw01:
     access_ports: []
     trunk_ports:
-      - "gi1"
       - "gi5"
+      - "lag1"
       - "gi6"
   Sw02:
     access_ports:
-      - "gi8"
-    trunk_ports: []
+      - "gi6"
+    trunk_ports:
+      - "lag1"

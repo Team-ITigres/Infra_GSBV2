@@ -115,7 +115,7 @@
 
     - name: Forcer la mise à jour de la GPO
       ansible.windows.win_shell: |
-        gpupdate /force
+        gpupdate /force /wait:0
       ignore_errors: yes
 
     - name: Afficher le résumé de la configuration
