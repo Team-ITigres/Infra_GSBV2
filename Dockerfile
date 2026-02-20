@@ -9,6 +9,7 @@ RUN apt update \
  && apt install -y --no-install-recommends \
     ca-certificates \
     curl \
+    expect \
     wget \
     gnupg \
     git \
