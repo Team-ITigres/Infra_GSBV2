@@ -1,10 +1,11 @@
 name: Push Adminbox to GHCR
-on: 
-  push: 
+on:
+  push:
     branches:
       - main
     paths:
       - Dockerfile
+  workflow_dispatch:
 
 jobs:
   push-ghcr: 
