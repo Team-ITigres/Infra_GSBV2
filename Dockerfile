@@ -64,6 +64,7 @@ RUN mkdir -p /work /root/.ssh
 # === Alias pour ansible-playbook ===
 RUN echo 'alias apl="ansible-playbook Install_Linuxs.yml"' >> /root/.bashrc
 RUN echo 'alias apw="ansible-playbook Install_Windows.yml"' >> /root/.bashrc
+RUN echo 'alias ape="ansible-playbook epreuve_E6.yml"' >> /root/.bashrc
 
 WORKDIR /work
 
