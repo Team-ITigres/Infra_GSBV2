@@ -1,53 +1,54 @@
-ou_name: "Support Client"
-group_name: "grp_support_client"
+ou_name: "Les_tigres"
+group_name: "grp_les_tigres"
 ou_path: "DC=gsb,DC=local"
-folder_name: "Support_Client"
-drive_letter: "S"
+folder_name: "les_tigres"
+drive_letter: "T"
 block_cmd: "oui"
-block_control_panel: "oui"
+block_control_panel: "non"
 
-vlan_id: 78
-vlan_name: "Support_Client"
+vlan_id: 89
+vlan_name: "Les_tigres"
 
-id_vif: "78"
-ip_vif: "192.168.78.254/24"
-dhcp_start: "192.168.78.10"
-dhcp_stop: "192.168.78.100"
-dhcp_gateway: "192.168.78.254"
+id_vif: "89"
+ip_vif: "192.168.89.254/24"
+dhcp_start: "192.168.89.10"
+dhcp_stop: "192.168.89.200"
+dhcp_gateway: "192.168.89.254"
 dhcp_dns: "172.16.0.3"
 
 firewall_rule: "oui"
-vlan_source: "78"
-vlan_dest: "99"
-service: "all"
-description: "Block vlan admin"
+vlan_source: "89"
+vlan_dest: "300"
+service: "ssh"
+description: "Block ssh sur 300"
 
 nat_rule: "non"
 
 create_nextcloud_folder: "oui"
-nextcloud_folder_name: "Support_Client"
+nextcloud_folder_name: "Les_Tigres"
 
 users:
-  - firstname: "Léa"
-    lastname: "Martin"
-    username: "lea.martin"
+  - firstname: "leq"
+    lastname: "letigre"
+    username: "LeQ Letigre"
     password: "Formation13@"
-    email: "lea.martin@gsb.local"
-  - firstname: "Théo"
-    lastname: "Bertrand"
-    username: "theo.bertrand"
+    email: "leq.letigre@gsb.local"
+  - firstname: "nonow"
+    lastname: "letigre"
+    username: "hudie"
     password: "Formation13@"
-    email: "theo.bertrand@gsb.local"
+    email: "nono@gsb.local"
 
 domains:
-  - "betclic.fr"
+  - "pornhub.fr"
+  - "facebook.com"
 
 switch_ports:
   Sw01:
     access_ports: []
     trunk_ports:
-      - "gi5"
       - "lag1"
+      - "gi5"
       - "gi6"
   Sw02:
     access_ports:

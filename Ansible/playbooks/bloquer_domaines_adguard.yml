@@ -56,8 +56,8 @@
       ansible.builtin.wait_for:
         host: "{{ ansible_host }}"
         port: 53
-        delay: 2
-        timeout: 30
+        delay: 5
+        timeout: 60
       when: domains_added is changed
 
     - name: Resume

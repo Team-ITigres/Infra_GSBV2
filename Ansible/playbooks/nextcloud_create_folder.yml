@@ -38,11 +38,40 @@
       register: occ_scan
       changed_when: occ_scan.rc == 0
 
+    - name: Récupérer l'ID de configuration LDAP
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          php occ ldap:show-config
+      register: ldap_config_raw
+      changed_when: false
+      failed_when: false
+
+    - name: Extraire l'ID de config LDAP
+      ansible.builtin.set_fact:
+        ldap_config_id: "{{ ldap_config_raw.stdout | regex_search('(s\\d+)', '\\1') | first | default('s01') }}"
+
     - name: S'assurer que ldapGroupMemberAssocAttr est configuré pour AD
       ansible.builtin.command:
         cmd: >
           docker exec -u www-data {{ nextcloud_container_name }}
-          php occ ldap:set-config s01 ldapGroupMemberAssocAttr "member"
+          php occ ldap:set-config {{ ldap_config_id }} ldapGroupMemberAssocAttr "member"
+      changed_when: false
+      failed_when: false
+
+    - name: S'assurer que ldapGroupFilterObjectclass est configuré pour AD
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          php occ ldap:set-config {{ ldap_config_id }} ldapGroupFilterObjectclass "group"
+      changed_when: false
+      failed_when: false
+
+    - name: Vider le cache LDAP pour forcer la redécouverte des groupes AD
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          php occ ldap:clear-mapping group
       changed_when: false
       failed_when: false
 
@@ -75,7 +104,11 @@
           - "http://localhost/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json"
       register: occ_share
       changed_when: '"statuscode\":200" in occ_share.stdout or "statuscode\":100" in occ_share.stdout'
-      failed_when: occ_share.rc != 0 or "status\":\"ok\"" not in occ_share.stdout
+      failed_when: >
+        occ_share.rc != 0 or
+        ("status\":\"ok\"" not in occ_share.stdout and
+         "already shared" not in occ_share.stdout | lower and
+         "statuscode\":403" not in occ_share.stdout)
 
     - name: Afficher la réponse de l'API si erreur
       ansible.builtin.debug:

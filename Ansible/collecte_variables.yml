@@ -431,14 +431,22 @@
           switch_ports:
           {% for sw_name, ports in switch_ports.items() %}
             {{ sw_name }}:
-              access_ports: {{ ports.access_ports if ports.access_ports else '[]' }}
+              access_ports:
+          {% if ports.access_ports %}
           {% for p in ports.access_ports %}
                 - "{{ p }}"
           {% endfor %}
-              trunk_ports: {{ ports.trunk_ports if ports.trunk_ports else '[]' }}
+          {% else %}
+                []
+          {% endif %}
+              trunk_ports:
+          {% if ports.trunk_ports %}
           {% for p in ports.trunk_ports %}
                 - "{{ p }}"
           {% endfor %}
+          {% else %}
+                []
+          {% endif %}
           {% endfor %}
 
     - name: Créer le répertoire vars si nécessaire
