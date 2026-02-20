@@ -44,6 +44,10 @@
     name: proxmox-backup-server
     state: present
 
+- name: Définir le mot de passe root pour l'authentification API PBS
+  ansible.builtin.shell:
+    cmd: echo "root:{{ pbs_root_password }}" | chpasswd
+
 - name: Supprimer le dépôt enterprise PBS après installation (non accessible sans souscription)
   ansible.builtin.command:
     cmd: rm -f /etc/apt/sources.list.d/pbs-enterprise.sources

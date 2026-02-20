@@ -7,6 +7,7 @@ pbs_admin_email: "admin@gsb.local"
 pbs_http_port: "8007"
 pbs_datastore_name: "backup"
 pbs_datastore_path: "/var/lib/proxmox-backup/datastore"
+pbs_root_password: "Formation13@"
 
 # Proxmox Repository Configuration
 proxmox_repo_url: "http://download.proxmox.com/debian/pbs"

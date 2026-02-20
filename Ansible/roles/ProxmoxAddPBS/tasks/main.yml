@@ -2,18 +2,41 @@
 ---
 # tasks file for ProxmoxAddPBS
 
-- name: Récupérer le fingerprint du certificat PBS
+- name: Récupérer le fingerprint depuis les facts de ProxmoxBackup
+  ansible.builtin.set_fact:
+    pbs_fingerprint: "{{ hostvars['ProxmoxBackup']['pbs_fingerprint'] }}"
+  when: hostvars['ProxmoxBackup']['pbs_fingerprint'] is defined
+
+- name: Récupérer le fingerprint du certificat PBS via SSH (fallback si fact non disponible)
   ansible.builtin.command:
-    cmd: ssh -i ~/etc/ansible/keys/ProxmoxBackup -o StrictHostKeyChecking=no root@{{ pbs_server }} "proxmox-backup-manager cert info"
+    cmd: ssh -i ~/etc/ansible/keys/ProxmoxBackup -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@{{ pbs_server }} "proxmox-backup-manager cert info"
   register: pbs_cert_info
   changed_when: false
   delegate_to: localhost
+  when: hostvars['ProxmoxBackup']['pbs_fingerprint'] is not defined
 
-- name: Définir le fingerprint
+- name: Définir le fingerprint depuis la commande SSH (fallback)
   ansible.builtin.set_fact:
     pbs_fingerprint: "{{ pbs_cert_info.stdout | regex_search('Fingerprint \\(sha256\\): ([A-Fa-f0-9:]+)', '\\1') | first }}"
+  when: hostvars['ProxmoxBackup']['pbs_fingerprint'] is not defined
 
-- name: Ajouter le storage PBS au PVE
+- name: Afficher le nouveau fingerprint
+  ansible.builtin.debug:
+    msg: "Nouveau fingerprint PBS: {{ pbs_fingerprint }}"
+
+- name: Supprimer l'ancien storage PBS s'il existe (pour mettre à jour le fingerprint)
+  community.proxmox.proxmox_storage:
+    api_host: "{{ pve_api_host }}"
+    api_user: "{{ pve_api_user }}"
+    api_token_id: "{{ pve_api_token_id }}"
+    api_token_secret: "{{ pve_api_token_secret }}"
+    name: "{{ pbs_storage_name }}"
+    state: absent
+  delegate_to: localhost
+  run_once: true
+  failed_when: false
+
+- name: Ajouter le storage PBS au PVE avec le nouveau fingerprint
   community.proxmox.proxmox_storage:
     api_host: "{{ pve_api_host }}"
     api_user: "{{ pve_api_user }}"

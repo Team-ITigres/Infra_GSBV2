@@ -99,3 +99,19 @@
     enabled: true
     description: "Compte de service pour l'authentification LDAP de nextcloud"
   register: nextcloud_bind_creation
+
+- name: Déployer le script de configuration LDAP pour Nextcloud
+  ansible.builtin.template:
+    src: ldap-config.sh.j2
+    dest: /srv/nextcloud/ldap-config.sh
+    mode: '0755'
+  delegate_to: Nextcloud
+  when: nextcloud_ldap_enabled | default(true)
+
+- name: Exécuter la configuration LDAP pour Nextcloud
+  ansible.builtin.command:
+    cmd: /srv/nextcloud/ldap-config.sh
+  register: ldap_config_result
+  changed_when: "'Configuration LDAP terminée avec succès' in ldap_config_result.stdout"
+  delegate_to: Nextcloud
+  when: nextcloud_ldap_enabled | default(true)
