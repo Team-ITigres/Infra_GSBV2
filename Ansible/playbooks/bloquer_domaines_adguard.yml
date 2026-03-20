@@ -40,7 +40,7 @@
       ansible.builtin.lineinfile:
         path: /srv/adguard/adguard-conf/AdGuardHome.yaml
         insertafter: '^  blocked_hosts:'
-        line: "    - ||{{ item }}^"
+        line: "    - \"||{{ item }}^\""
         state: present
       loop: "{{ domains }}"
       register: domains_added
