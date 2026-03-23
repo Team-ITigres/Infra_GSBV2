@@ -31,6 +31,17 @@
   retries: 30
   delay: 10
 
+- name: Configurer les trusted_domains Nextcloud
+  ansible.builtin.command:
+    cmd: >
+      docker exec -u www-data {{ nextcloud_container_name }}
+      php occ config:system:set trusted_domains {{ index }}
+      --value={{ item }}
+  loop: "{{ nextcloud_trusted_domains }}"
+  loop_control:
+    index_var: index
+  changed_when: false
+
 - name: Afficher les informations de connexion
   ansible.builtin.debug:
     msg:

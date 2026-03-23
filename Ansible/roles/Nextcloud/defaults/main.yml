@@ -39,3 +39,9 @@ nextcloud_ldap_group_display_name: "cn"
 
 # Domain
 nextcloud_domain: "gsb.local"
+
+# Trusted Domains
+nextcloud_trusted_domains:
+  - "172.16.69.3"
+  - "172.16.0.254"
+  - "nextcloud.gsb.local"
