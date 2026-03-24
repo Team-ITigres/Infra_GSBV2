@@ -1,6 +1,12 @@
-# CLAUDE.md — Infra GSBV2
+# CLAUDE.md
 
-Chargé automatiquement par Claude Code à chaque session sur ce projet.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+## Infra GSBV2
+
+Déploiement automatisé d'une infrastructure complète sur Proxmox via Terraform + Ansible, avec Active Directory, services Docker, réseau VLAN et équipements physiques.
 
 ---
 
@@ -215,6 +221,7 @@ Mot de passe universel : `Formation13@`
 - Pare-feu intervlan : ruleset `INTERVLAN_POLICY` sur `eth1`
 - NAT : règles DNAT numérotées automatiquement (max existant + 1)
 - Interface réseau principale : `eth1` (VLANs en VIF)
+- IP WAN du routeur : `192.168.50.81` — les routes Traefik pointant sur cette IP font du **hairpin NAT** (les LANs internes accèdent aux services DMZ via l'IP WAN, comme depuis l'extérieur). C'est voulu, ne pas remplacer par les IPs directes des LXC.
 
 ---
 
@@ -241,3 +248,70 @@ Mot de passe universel : `Formation13@`
 | `users[]` | Liste users AD (firstname/lastname/username/password/email) |
 | `domains[]` | Domaines à bloquer AdGuard |
 | `switch_ports{}` | Ports access/trunk par switch (`[]` si vide, jamais null) |
+
+---
+
+## Commandes courantes
+
+```bash
+# Lancer le playbook E6 complet (depuis /Infra_GSBV2/Ansible)
+cd /Infra_GSBV2/Ansible
+terransible ansible-playbook epreuve_E6.yml
+
+# Relancer un playbook seul
+terransible ansible-playbook playbooks/bloquer_domaines_adguard.yml
+terransible ansible-playbook playbooks/Vif_dhcp_routeur.yml
+terransible ansible-playbook playbooks/switchs.yml
+
+# Initialisation complète Linux/Windows
+terransible ansible-playbook Install_Linuxs.yml
+terransible ansible-playbook Install_Windows.yml
+
+# Terraform (depuis /Infra_GSBV2/Terraform)
+cd /Infra_GSBV2/Terraform
+terransible terraform init
+terransible terraform apply
+
+# Déploiement initial (sur le nœud Proxmox, en tant que root)
+bash Script_Deploy.sh full
+```
+
+**Note** : `--start-at-task` ne fonctionne pas avec `import_playbook` — relancer directement le playbook concerné.
+
+---
+
+## Collections Ansible requises (`requirements.yml`)
+
+```
+community.docker, ansible.windows, community.windows, microsoft.ad,
+vyos.vyos, community.network, community.proxmox
+```
+
+Installation dans adminbox : `ansible-galaxy collection install -r requirements.yml`
+
+---
+
+## Services déployés
+
+| Service | URL |
+|---------|-----|
+| AdGuard | http://172.16.0.3:3000 |
+| Traefik | http://172.16.0.4:8080/dashboard/ |
+| GLPI | http://172.16.0.5/glpi |
+| Pulse | http://172.16.0.5:7655 |
+| Nextcloud | http://172.16.69.3:8080 |
+| SFTPGO | http://172.16.69.2:8080/web/admin |
+| Roundcube | http://172.16.0.6 |
+| ProxmoxBackup | https://172.16.31.1:8007 |
+
+---
+
+## CI/CD GitHub Actions
+
+| Workflow | Déclencheur | Action |
+|----------|-------------|--------|
+| `build-adminbox.yml` | Push `main` modifiant `Dockerfile` | Build image + push `.tar` via SCP |
+| `deploy-script.yml` | Push `main` modifiant `Script_Deploy.sh` | Déploie le script sur serveur web |
+| `push-ghcr.yml` | Push `main` sur `Dockerfile` ou manuel | Build + push sur `ghcr.io/team-itigres/adminbox` |
+
+Secrets requis : `M2SHELPER_CLE` (clé SSH), `M2SHELPER_IP` (IP serveur web), `GITHUB_TOKEN` (auto).
