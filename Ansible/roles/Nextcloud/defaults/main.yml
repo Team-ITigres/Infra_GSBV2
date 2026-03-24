@@ -45,3 +45,4 @@ nextcloud_trusted_domains:
   - "172.16.69.3"
   - "172.16.0.254"
   - "nextcloud.gsb.local"
+  - "192.168.50.81"
