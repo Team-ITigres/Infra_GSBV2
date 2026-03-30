@@ -49,7 +49,7 @@ traefik_routers:
   - name: pbs
     host: "pbs.gsb.local"
     service: pbs
-    url: "http://192.168.50.81:8007"
+    url: "https://192.168.50.81:8007"
   - name: traefik
     host: "traefik.gsb.local"
     service: traefik

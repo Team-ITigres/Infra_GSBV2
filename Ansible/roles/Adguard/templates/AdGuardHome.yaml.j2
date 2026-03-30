@@ -112,8 +112,7 @@ filters:
     name: AdAway Default Blocklist
     id: 2
 whitelist_filters: []
-user_rules:
-  - '/^[^.]+\.gsb\.local$/$dnstype=A,dnsrewrite=NOERROR;A;172.16.0.4'
+user_rules: []
 dhcp:
   enabled: false
   interface_name: ""
@@ -151,7 +150,11 @@ filtering:
   blocking_mode: default
   parental_block_host: family-block.dns.adguard.com
   safebrowsing_block_host: standard-block.dns.adguard.com
-  rewrites: []
+  rewrites:
+{% for router in traefik_routers %}
+    - domain: "{{ router.host }}"
+      answer: "172.16.0.4"
+{% endfor %}
   safe_fs_patterns:
     - /opt/AdGuardHome/userfilters/*
   safebrowsing_cache_size: 1048576

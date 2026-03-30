@@ -1,3 +1,7 @@
+- name: Charger les variables Traefik (routes DNS)
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/roles/Traefik/defaults/main.yml"
+
 - name: Créer le dossier AdGuard
   ansible.builtin.file:
     path: /srv/adguard
