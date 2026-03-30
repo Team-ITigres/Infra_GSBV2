@@ -1,51 +1,46 @@
-ou_name: "Les_tigres"
-group_name: "grp_les_tigres"
+ou_name: "Mugiwara"
+group_name: "mugiwaras"
 ou_path: "DC=gsb,DC=local"
-folder_name: "les_tigres"
-drive_letter: "T"
-block_cmd: "oui"
-block_control_panel: "non"
+folder_name: "Thousand_Sunny"
+drive_letter: "D"
+block_cmd: "non"
+block_control_panel: "oui"
 
-vlan_id: 89
-vlan_name: "Les_tigres"
+vlan_id: 47
+vlan_name: "OnePiece"
 
-id_vif: "89"
-ip_vif: "192.168.89.254/24"
-dhcp_start: "192.168.89.10"
-dhcp_stop: "192.168.89.200"
-dhcp_gateway: "192.168.89.254"
+id_vif: "47"
+ip_vif: "192.168.47.254/24"
+dhcp_start: "192.168.47.100"
+dhcp_stop: "192.168.47.200"
+dhcp_gateway: "192.168.47.254"
 dhcp_dns: "172.16.0.3"
 
 firewall_rule: "oui"
-vlan_source: "89"
+vlan_source: "47"
 vlan_dest: "300"
 service: "ssh"
-description: "Block ssh sur 300"
+description: "cnjsoced"
 
 nat_rule: "non"
 
 create_nextcloud_folder: "oui"
-nextcloud_folder_name: "Les_Tigres"
+nextcloud_folder_name: "Mugiwaras"
 
 users:
-  - firstname: "leq"
-    lastname: "letigre"
-    username: "LeQ Letigre"
+  - firstname: "Luffy"
+    lastname: "Monkey"
+    username: "Monkey D. Luffy"
     password: "Formation13@"
-    email: "leq.letigre@gsb.local"
-  - firstname: "nonow"
-    lastname: "letigre"
-    username: "hudie"
-    password: "Formation13@"
-    email: "nono@gsb.local"
+    email: "monkey.d.luffy@gsb.local"
 
 domains:
-  - "pornhub.fr"
-  - "facebook.com"
+  - "goldroger.com"
 
 switch_ports:
   Sw01:
-    access_ports: []
+    access_ports:
+      []
     trunk_ports:
       - "lag1"
       - "gi5"

@@ -67,13 +67,25 @@
       changed_when: false
       failed_when: false
 
-    - name: Vider le cache LDAP pour forcer la redécouverte des groupes AD
+    - name: Synchroniser les groupes LDAP/AD dans Nextcloud
       ansible.builtin.command:
         cmd: >
           docker exec -u www-data {{ nextcloud_container_name }}
-          php occ ldap:clear-mapping group
+          php occ ldap:sync group
       changed_when: false
       failed_when: false
+
+    - name: Attendre que le groupe AD soit visible dans Nextcloud
+      ansible.builtin.command:
+        cmd: >
+          docker exec -u www-data {{ nextcloud_container_name }}
+          php occ group:list
+      register: group_check
+      changed_when: false
+      failed_when: false
+      retries: 5
+      delay: 3
+      until: group_name in group_check.stdout
 
     - name: Partager le dossier avec le groupe AD via l'API OCS (permissions modification)
       ansible.builtin.command:
