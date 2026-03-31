@@ -1,41 +1,47 @@
-ou_name: "Mugiwara"
-group_name: "mugiwaras"
+ou_name: "Support Comptabilité"
+group_name: "grp_csupport_comptabilité"
 ou_path: "DC=gsb,DC=local"
-folder_name: "Thousand_Sunny"
-drive_letter: "D"
-block_cmd: "non"
-block_control_panel: "oui"
+folder_name: "Partage_Support_Comptabilite"
+drive_letter: "F"
+block_cmd: "oui"
+block_control_panel: "non"
 
-vlan_id: 47
-vlan_name: "OnePiece"
+vlan_id: 88
+vlan_name: "SupportComptabilite"
 
-id_vif: "47"
-ip_vif: "192.168.47.254/24"
-dhcp_start: "192.168.47.100"
-dhcp_stop: "192.168.47.200"
-dhcp_gateway: "192.168.47.254"
+id_vif: "88"
+ip_vif: "192.168.88.1/27"
+dhcp_start: "192.168.88.2"
+dhcp_stop: "192.168.88.26"
+dhcp_gateway: "192.168.88.1"
 dhcp_dns: "172.16.0.3"
 
 firewall_rule: "oui"
-vlan_source: "47"
-vlan_dest: "300"
+vlan_source: "88"
+vlan_dest: "300,301,99"
 service: "ssh"
-description: "cnjsoced"
+description: "Bloquer ssh vers tous les services"
 
 nat_rule: "non"
 
 create_nextcloud_folder: "oui"
-nextcloud_folder_name: "Mugiwaras"
+nextcloud_folder_name: "Partage_Support_Client"
 
 users:
-  - firstname: "Luffy"
-    lastname: "Monkey"
-    username: "Monkey D. Luffy"
+  - firstname: "Laura"
+    lastname: "MICHEL"
+    username: "Laura Michel"
     password: "Formation13@"
-    email: "monkey.d.luffy@gsb.local"
+    email: "laura.michel@gsb.local"
+  - firstname: "Paul"
+    lastname: "GARNIER"
+    username: "Paul GARNIER"
+    password: "Formation13@"
+    email: "paul.garnier@gsb.local"
 
 domains:
-  - "goldroger.com"
+  - "facebook.com"
+  - "youtube.com"
 
 switch_ports:
   Sw01:
@@ -44,9 +50,8 @@ switch_ports:
     trunk_ports:
       - "lag1"
       - "gi5"
-      - "gi6"
   Sw02:
     access_ports:
-      - "gi6"
+      - "gi8"
     trunk_ports:
       - "lag1"
