@@ -45,11 +45,11 @@ traefik_routers:
   - name: sftpgo
     host: "sftpgo.gsb.local"
     service: sftpgo
-    url: "http://192.168.50.81:8080"
+    url: "http://192.168.50.98:8080"
   - name: pbs
     host: "pbs.gsb.local"
     service: pbs
-    url: "https://192.168.50.81:8007"
+    url: "https://192.168.50.98:8007"
   - name: traefik
     host: "traefik.gsb.local"
     service: traefik
@@ -61,4 +61,4 @@ traefik_routers:
   - name: nextcloud
     host: "nextcloud.gsb.local"
     service: nextcloud
-    url: "http://192.168.50.81:8081"
+    url: "http://192.168.50.98:8081"
