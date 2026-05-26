@@ -52,6 +52,7 @@
 
 - name: Install Treafik
   become: yes
+  tags: traefik
   hosts: Stack-Web
   roles:
     - roles/Traefik

@@ -1,7 +1,7 @@
 ---
 - name: Créer une GPO pour mapper un lecteur réseau
   hosts: WinSRV01
-  gather_facts: no
+  gather_facts: false
 
   vars_files:
     - ../vars/generated_vars.yml
@@ -25,7 +25,7 @@
     - name: Construire les variables
       ansible.builtin.set_fact:
         gpo_name: "Map_{{ folder_name }}_{{ ou_name }}"
-        unc_path: "\\\\{{ ansible_host }}\\{{ folder_name }}"
+        unc_path: "\\\\{{ inventory_hostname | upper }}\\{{ folder_name }}"
         ou_path: "OU={{ ou_name }},DC=gsb,DC=local"
 
     - name: Afficher les informations de la GPO
@@ -88,6 +88,50 @@
           </Drives>
         dest: "\\\\{{ ansible_host }}\\SYSVOL\\gsb.local\\Policies\\{{ '{' }}{{ gpo_guid }}{{ '}' }}\\User\\Preferences\\Drives\\Drives.xml"
       register: xml_creation
+
+    - name: Enregistrer l'extension Drive Maps dans la GPO
+      ansible.windows.win_shell: |
+        Import-Module ActiveDirectory
+        Import-Module GroupPolicy
+
+        $gpoName = "{{ gpo_name }}"
+        $gpo = Get-GPO -Name $gpoName
+        $gpoDn = $gpo.Path -replace '^LDAP://', ''
+        $gpoAd = Get-ADObject -Identity $gpoDn -Properties gPCUserExtensionNames, versionNumber
+
+        # Drive Maps CSE + tool extension GUIDs (Group Policy Preferences).
+        $driveMapsExtension = "[{5794DAFD-BE60-433F-88A2-1A31939AC01F}{2EA1A81B-48E5-45E9-8BB7-A6E3AC170006}]"
+        $currentExtensions = [string]$gpoAd.gPCUserExtensionNames
+
+        if ($currentExtensions -notlike "*{5794DAFD-BE60-433F-88A2-1A31939AC01F}*") {
+            Set-ADObject -Identity $gpoDn -Replace @{gPCUserExtensionNames = "$currentExtensions$driveMapsExtension"}
+            Write-Output "DRIVE_MAPS_EXTENSION_REGISTERED"
+        } else {
+            Write-Output "DRIVE_MAPS_EXTENSION_ALREADY_REGISTERED"
+        }
+
+        $currentVersion = [int]$gpoAd.versionNumber
+        $userVersion = [math]::Floor($currentVersion / 65536)
+        $computerVersion = $currentVersion % 65536
+        $newVersion = (($userVersion + 1) * 65536) + $computerVersion
+
+        Set-ADObject -Identity $gpoDn -Replace @{versionNumber = $newVersion}
+
+        $gptIniPath = "\\{{ inventory_hostname }}\SYSVOL\gsb.local\Policies\{{ '{' }}{{ gpo_guid }}{{ '}' }}\GPT.INI"
+        if (Test-Path $gptIniPath) {
+            $content = Get-Content -Path $gptIniPath
+            if ($content -match '^Version=') {
+                $content = $content -replace '^Version=.*$', "Version=$newVersion"
+            } else {
+                $content += "Version=$newVersion"
+            }
+            Set-Content -Path $gptIniPath -Value $content -Encoding ASCII
+        } else {
+            Set-Content -Path $gptIniPath -Value @("[General]", "Version=$newVersion") -Encoding ASCII
+        }
+
+        Write-Output "GPO_USER_VERSION_UPDATED:$newVersion"
+      register: gpo_extension_registration
 
     - name: Lier la GPO à l'OU
       ansible.windows.win_shell: |

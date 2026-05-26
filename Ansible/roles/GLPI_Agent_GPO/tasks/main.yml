@@ -142,6 +142,29 @@
           Write-Output "GPO '$GpoName' creee depuis le backup"
       }
 
+- name: Configurer les permissions et l'etat de la GPO GLPI Agent
+  ansible.windows.win_powershell:
+    script: |
+      Import-Module ActiveDirectory
+      Import-Module GroupPolicy
+
+      $GpoName = "{{ glpi_agent_gpo_name }}"
+      $DomainSid = (Get-ADDomain).DomainSID.Value
+      $DomainComputers = (New-Object System.Security.Principal.SecurityIdentifier("$DomainSid-515")).Translate([System.Security.Principal.NTAccount]).Value
+      $AuthenticatedUsers = (New-Object System.Security.Principal.SecurityIdentifier("S-1-5-11")).Translate([System.Security.Principal.NTAccount]).Value
+
+      Set-GPO -Name $GpoName -GpoStatus AllSettingsEnabled
+
+      try {
+          Set-GPPermission -Name $GpoName -TargetName $AuthenticatedUsers -TargetType Group -PermissionLevel GpoRead -Replace
+          Write-Output "${AuthenticatedUsers}: lecture configuree"
+      } catch {
+          Write-Output "${AuthenticatedUsers}: lecture deja correcte ou non modifiee"
+      }
+
+      Set-GPPermission -Name $GpoName -TargetName $DomainComputers -TargetType Group -PermissionLevel GpoApply
+      Write-Output "${DomainComputers}: application GPO configuree"
+
 # =============================================================================
 # ÉTAPE 4 : Lier la GPO à l'OU des ordinateurs
 # =============================================================================

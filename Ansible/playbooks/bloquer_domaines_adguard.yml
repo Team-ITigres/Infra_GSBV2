@@ -1,6 +1,6 @@
 - name: Bloquer des domaines dans AdGuard Home
   hosts: Adguard
-  gather_facts: true
+  gather_facts: false
 
   vars_files:
     - ../vars/generated_vars.yml
@@ -32,9 +32,16 @@
     - name: Creer une sauvegarde de la configuration actuelle
       ansible.builtin.copy:
         src: /srv/adguard/adguard-conf/AdGuardHome.yaml
-        dest: "/srv/adguard/adguard-conf/AdGuardHome.yaml.backup.{{ ansible_date_time.epoch }}"
+        dest: "/srv/adguard/adguard-conf/AdGuardHome.yaml.backup.{{ lookup('pipe', 'date +%s') }}"
         remote_src: yes
         mode: '0600'
+
+    - name: Normaliser la section user_rules en liste YAML
+      ansible.builtin.replace:
+        path: /srv/adguard/adguard-conf/AdGuardHome.yaml
+        regexp: '^user_rules:\s*\[\]\s*$'
+        replace: 'user_rules:'
+      register: user_rules_normalized
 
     - name: Ajouter les domaines a la section user_rules (avec syntaxe wildcard)
       ansible.builtin.lineinfile:
@@ -50,7 +57,7 @@
         name: adguard
         state: started
         restart: yes
-      when: domains_added is changed
+      when: user_rules_normalized is changed or domains_added is changed or adguard_force_restart | default(false) | bool
 
     - name: Attendre le redemarrage d'AdGuard
       ansible.builtin.wait_for:
@@ -58,7 +65,7 @@
         port: 53
         delay: 5
         timeout: 60
-      when: domains_added is changed
+      when: user_rules_normalized is changed or domains_added is changed or adguard_force_restart | default(false) | bool
 
     - name: Resume
       ansible.builtin.debug:

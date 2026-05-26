@@ -1,7 +1,7 @@
 ---
 - name: Creer et partager un dossier avec permissions AD
   hosts: WinSRV01
-  gather_facts: no
+  gather_facts: false
 
   vars_files:
     - ../vars/generated_vars.yml
@@ -36,7 +36,7 @@
 
     - name: Afficher le resultat du partage
       ansible.builtin.debug:
-        msg: "Dossier partage en reseau : \\\\{{ ansible_host }}\\{{ folder_name }}"
+        msg: "Dossier partage en reseau : \\\\{{ inventory_hostname | upper }}\\{{ folder_name }}"
 
     - name: Configurer les permissions NTFS sur le dossier
       ansible.windows.win_acl:
